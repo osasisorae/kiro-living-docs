@@ -636,9 +636,13 @@ export class CodeAnalyzer {
 
     // Development log entry
     if (apis.length > 0 || features.length > 0 || changes.length > 0) {
+      // Generate a timestamped filename for the development log
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `analysis-${timestamp}.md`;
+      
       requirements.push({
         type: 'dev-log',
-        targetFile: '.kiro/development-log/',
+        targetFile: `.kiro/development-log/${filename}`,
         content: `Development log entry for analysis results`,
         priority: 'low'
       });

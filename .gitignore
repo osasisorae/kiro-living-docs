@@ -1,2 +1,6 @@
 node_modules/
 dist/
+
+# Generated development logs and artifacts
+.kiro/development-log/analysis-*.md
+*.backup.*
