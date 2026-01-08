@@ -26,7 +26,7 @@
   - **Property 2: Change classification accuracy**
   - **Validates: Requirements 1.4**
 
-- [ ] 3. Create template engine and documentation generators
+- [x] 3. Create template engine and documentation generators
   - Implement template registry with built-in templates for API docs, setup instructions, and architecture notes
   - Create template renderer with variable substitution
   - Build API specification generator for .kiro/specs/ files
@@ -34,15 +34,15 @@
   - Add development log entry generator
   - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 4.1, 6.1, 6.2, 6.3_
 
-- [ ] 3.1 Write property test for documentation update triggering
+- [x] 3.1 Write property test for documentation update triggering
   - **Property 4: Documentation update triggering**
   - **Validates: Requirements 2.1, 2.2, 2.3**
 
-- [ ] 3.2 Write property test for README synchronization
+- [x] 3.2 Write property test for README synchronization
   - **Property 5: README section synchronization**
   - **Validates: Requirements 3.1, 3.2, 3.3**
 
-- [ ] 3.3 Write property test for template application
+- [x] 3.3 Write property test for template application
   - **Property 13: Template application consistency**
   - **Validates: Requirements 6.1, 6.2, 6.3**
 
