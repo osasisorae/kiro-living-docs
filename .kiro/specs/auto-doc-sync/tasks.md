@@ -123,7 +123,7 @@
   - Wire together analysis engine, template engine, and output manager
   - _Requirements: 1.1, 1.2_
 
-- [ ] 11. Create example .kiro/ directory structure
+- [x] 11. Create example .kiro/ directory structure
   - Set up sample .kiro/specs/ files to demonstrate the system
   - Create example steering files with project patterns
   - Add sample hook configurations for common scenarios

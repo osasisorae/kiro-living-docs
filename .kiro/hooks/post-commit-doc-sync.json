@@ -1,0 +1,73 @@
+{
+  "name": "post-commit-doc-sync",
+  "description": "Automatically sync documentation after git commits",
+  "version": "1.0.0",
+  "trigger": {
+    "type": "git-hook",
+    "event": "post-commit",
+    "conditions": {
+      "filePatterns": [
+        "src/**/*.ts",
+        "src/**/*.js",
+        "src/**/*.tsx",
+        "src/**/*.jsx"
+      ],
+      "excludePatterns": [
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/*.d.ts"
+      ],
+      "minChanges": 1
+    }
+  },
+  "action": {
+    "type": "subagent-execution",
+    "subagent": "doc-analysis-agent",
+    "command": "analyze-and-sync",
+    "parameters": {
+      "analysisDepth": "deep",
+      "updateTargets": [
+        "api-specs",
+        "readme-sections",
+        "dev-logs"
+      ],
+      "preserveFormatting": true,
+      "validateOutput": true
+    },
+    "timeout": 60000,
+    "retryAttempts": 2
+  },
+  "context": {
+    "commitHash": "${GIT_COMMIT_HASH}",
+    "changedFiles": "${GIT_CHANGED_FILES}",
+    "commitMessage": "${GIT_COMMIT_MESSAGE}",
+    "author": "${GIT_AUTHOR_NAME}",
+    "timestamp": "${TIMESTAMP}"
+  },
+  "logging": {
+    "enabled": true,
+    "logLevel": "info",
+    "logFile": ".kiro/development-log/hook-execution.log",
+    "includeContext": true,
+    "includeOutput": true
+  },
+  "errorHandling": {
+    "onFailure": "log-and-continue",
+    "notificationChannels": [],
+    "fallbackActions": [
+      {
+        "type": "create-manual-task",
+        "description": "Review and update documentation manually",
+        "assignee": "${GIT_AUTHOR_NAME}"
+      }
+    ]
+  },
+  "configuration": {
+    "enabled": true,
+    "priority": "normal",
+    "concurrent": false,
+    "dependencies": [
+      "doc-analysis-agent"
+    ]
+  }
+}
