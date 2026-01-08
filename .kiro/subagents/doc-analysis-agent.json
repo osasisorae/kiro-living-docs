@@ -1,0 +1,104 @@
+{
+  "name": "doc-analysis-agent",
+  "version": "1.0.0",
+  "description": "Specialized AI agent for code analysis and documentation generation in the Auto-Doc-Sync System",
+  "capabilities": [
+    "code-analysis",
+    "ast-parsing",
+    "diff-analysis", 
+    "documentation-generation",
+    "template-processing",
+    "change-classification"
+  ],
+  "configuration": {
+    "model": "gpt-4",
+    "temperature": 0.1,
+    "maxTokens": 4000,
+    "timeout": 30000
+  },
+  "prompts": {
+    "system": "You are a specialized documentation analysis agent for the Auto-Doc-Sync System. Your role is to analyze code changes and generate structured documentation requirements. You have expertise in:\n\n1. Code Analysis: Parse TypeScript/JavaScript code to extract functions, classes, and API definitions\n2. Change Classification: Identify new features, API modifications, and architectural changes\n3. Documentation Generation: Create structured documentation requirements based on code analysis\n4. Template Processing: Apply documentation templates consistently\n\nYou work with the following data structures:\n- ChangeAnalysis: Complete analysis results with timestamps and change classifications\n- ChangedFile: Individual file changes with extracted code elements\n- DocumentationRequirement: Structured requirements for documentation updates\n- APIDefinition: Extracted API information including parameters and return types\n\nAlways provide structured, actionable output that can be processed by the Auto-Doc-Sync System.",
+    "codeAnalysis": "Analyze the following code changes and extract:\n1. Function definitions with parameters and return types\n2. Class definitions with methods and properties\n3. API endpoints and their specifications\n4. Exported interfaces and types\n\nCode changes:\n{changes}\n\nProvide the analysis in the following JSON structure:\n{\n  \"extractedFunctions\": [...],\n  \"extractedClasses\": [...],\n  \"extractedAPIs\": [...],\n  \"extractedTypes\": [...]\n}",
+    "changeClassification": "Classify the following code changes and identify:\n1. New features (completely new functionality)\n2. API modifications (changes to existing APIs)\n3. Architectural changes (structural modifications)\n4. Documentation impact (what docs need updating)\n\nChanged files:\n{changedFiles}\n\nProvide the classification in the following JSON structure:\n{\n  \"newFeatures\": [...],\n  \"apiModifications\": [...],\n  \"architecturalChanges\": [...],\n  \"documentationRequirements\": [...]\n}",
+    "documentationGeneration": "Generate documentation content based on the following analysis:\n\nAnalysis Results:\n{analysisResults}\n\nTemplate Type: {templateType}\n\nGenerate documentation content that:\n1. Follows the specified template format\n2. Includes all relevant technical details\n3. Maintains consistency with existing documentation\n4. Provides clear, actionable information\n\nReturn the generated content as structured text ready for file output.",
+    "templateProcessing": "Process the following template with the provided variables:\n\nTemplate:\n{template}\n\nVariables:\n{variables}\n\nApply the variables to the template and return the processed content. Ensure:\n1. All variables are properly substituted\n2. Formatting is preserved\n3. Any conditional sections are handled correctly\n4. The output is ready for direct file writing"
+  },
+  "integration": {
+    "analysisEngine": {
+      "interface": "CodeAnalyzer",
+      "methods": [
+        "analyze",
+        "extractFunctions", 
+        "extractClasses",
+        "extractAPIs",
+        "identifyNewFeatures",
+        "identifyArchitecturalChanges"
+      ],
+      "dataFlow": {
+        "input": "code changes, diff content",
+        "processing": "AST parsing, pattern matching, classification",
+        "output": "ChangeAnalysis object with structured results"
+      }
+    },
+    "templateEngine": {
+      "interface": "TemplateEngine",
+      "methods": [
+        "processTemplate",
+        "generateDocumentation",
+        "applyVariables"
+      ],
+      "dataFlow": {
+        "input": "analysis results, template definitions",
+        "processing": "variable substitution, content generation",
+        "output": "formatted documentation content"
+      }
+    },
+    "outputManager": {
+      "interface": "OutputManager", 
+      "methods": [
+        "writeDocumentation",
+        "updateReadme",
+        "createLogEntry"
+      ],
+      "dataFlow": {
+        "input": "generated documentation content",
+        "processing": "file writing, formatting preservation",
+        "output": "updated documentation files"
+      }
+    }
+  },
+  "errorHandling": {
+    "parseFailures": {
+      "strategy": "graceful-degradation",
+      "fallback": "text-based-analysis",
+      "logging": "detailed-error-context"
+    },
+    "analysisErrors": {
+      "strategy": "partial-results",
+      "fallback": "minimal-documentation-requirements", 
+      "logging": "error-classification-and-recovery"
+    },
+    "templateErrors": {
+      "strategy": "default-templates",
+      "fallback": "simple-text-generation",
+      "logging": "template-error-details"
+    }
+  },
+  "validation": {
+    "inputValidation": [
+      "code-syntax-check",
+      "diff-format-validation",
+      "file-path-verification"
+    ],
+    "outputValidation": [
+      "json-structure-validation",
+      "documentation-completeness-check",
+      "template-variable-substitution-verification"
+    ],
+    "qualityChecks": [
+      "documentation-clarity",
+      "technical-accuracy",
+      "consistency-with-existing-docs"
+    ]
+  }
+}

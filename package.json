@@ -7,7 +7,9 @@
     "build": "tsc",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "subagent": "ts-node src/subagent/cli.ts",
+    "subagent:example": "ts-node src/subagent/example.ts"
   },
   "keywords": ["documentation", "automation", "kiro", "sync"],
   "author": "",

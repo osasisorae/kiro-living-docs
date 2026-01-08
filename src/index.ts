@@ -8,6 +8,7 @@ export * from './templates';
 export * from './output';
 export * from './hooks';
 export * from './logging';
+export * from './subagent';
 
 // Main system class - placeholder for future implementation
 export class AutoDocSyncSystem {
