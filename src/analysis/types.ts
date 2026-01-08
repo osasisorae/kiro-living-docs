@@ -15,3 +15,15 @@ export interface AnalysisResult {
   warnings: string[];
   analysisTime: number;
 }
+
+export interface DiffEntry {
+  path: string;
+  changeType: 'added' | 'modified' | 'deleted';
+  diffContent: string;
+}
+
+export interface KiroContext {
+  specs: string[];
+  steeringFiles: string[];
+  hooks: string[];
+}
