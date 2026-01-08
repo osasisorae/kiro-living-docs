@@ -9,6 +9,7 @@ import { AutoDocSyncSystem } from './orchestrator';
 interface CLIOptions {
   trigger: 'git-hook' | 'manual';
   config?: string;
+  workspace?: string;
   files?: string[];
   reason?: string;
   help?: boolean;
@@ -37,6 +38,8 @@ function parseArguments(): CLIOptions {
       }
     } else if (arg.startsWith('--config=')) {
       options.config = arg.split('=')[1];
+    } else if (arg.startsWith('--workspace=')) {
+      options.workspace = arg.split('=')[1];
     } else if (arg.startsWith('--reason=')) {
       options.reason = arg.split('=')[1];
     } else if (arg.startsWith('--file=')) {
@@ -66,6 +69,7 @@ USAGE:
 OPTIONS:
   --trigger=TYPE        Trigger type: 'manual' (default) or 'git-hook'
   --config=PATH         Path to configuration file
+  --workspace=PATH      Workspace root directory (default: current directory)
   --reason=TEXT         Reason for manual trigger (for logging)
   --file=PATH           Specific file to analyze (can be used multiple times)
   --files=PATH1,PATH2   Comma-separated list of files to analyze
@@ -149,7 +153,7 @@ async function main(): Promise<void> {
 
     console.log('🚀 Starting Auto-Doc-Sync System...');
     
-    const system = new AutoDocSyncSystem(options.config);
+    const system = new AutoDocSyncSystem(options.config, options.workspace);
     
     await system.run({
       triggerType: options.trigger,

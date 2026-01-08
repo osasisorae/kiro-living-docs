@@ -109,6 +109,7 @@ npm install
       // Create test configuration that points to our test workspace
       const configFile = path.join(testKiroDir, 'auto-doc-sync.json');
       await fs.writeFile(configFile, JSON.stringify({
+        workspaceRoot: testWorkspace,
         analysis: {
           includePatterns: ['**/*.ts', '**/*.js'],
           excludePatterns: ['**/node_modules/**', '**/test-*/**'],
@@ -121,7 +122,7 @@ npm install
           validateOutput: true
         },
         logging: {
-          logDirectory: path.join(testKiroDir, 'development-log'),
+          logDirectory: '.kiro/development-log',
           maxEntriesPerFile: 100,
           retentionDays: 30,
           groupingTimeWindow: 5
@@ -131,12 +132,12 @@ npm install
         },
         hooks: {
           enabled: false,
-          configPath: path.join(testKiroDir, 'hooks')
+          configPath: '.kiro/hooks'
         }
       }, null, 2));
 
       // Run the auto-doc-sync system with manual trigger
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -204,7 +205,7 @@ npm install
       }, null, 2));
 
       // Run system
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -272,7 +273,7 @@ export function processData(input: string): string {
       }, null, 2));
 
       // Test manual trigger
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -332,7 +333,7 @@ export function processData(input: string): string {
       }, null, 2));
 
       // Run system with specific file targeting
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -383,7 +384,7 @@ export function processData(input: string): string {
         }
       }, null, 2));
 
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
 
       // Test with non-existent target files
@@ -479,7 +480,7 @@ export class UserManagementService {
       }, null, 2));
 
       // Run system
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -580,7 +581,7 @@ export class FeatureService {
       }, null, 2));
 
       // Run system
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -639,7 +640,7 @@ export class FeatureService {
       }, null, 2));
 
       // Run system
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -693,7 +694,7 @@ export class FeatureService {
       await fs.writeFile(sourceFile, 'export const MISSING_KIRO = true;');
 
       // Run system - should recreate directory structure
-      const system = new AutoDocSyncSystem();
+      const system = new AutoDocSyncSystem(undefined, testWorkspace);
       await system.initialize();
       
       await system.run({
@@ -753,7 +754,7 @@ export const INVALID = "unclosed string;
       }, null, 2));
 
       // Run system - should handle analysis failure gracefully
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await expect(system.run({
@@ -778,7 +779,7 @@ export const INVALID = "unclosed string;
       await fs.writeFile(sourceFile, 'export const CONFIG_ERROR = true;');
 
       // Run system - should use default config
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
       
       await expect(system.run({
@@ -822,7 +823,7 @@ export const INVALID = "unclosed string;
         }
       }, null, 2));
 
-      const system = new AutoDocSyncSystem(configFile);
+      const system = new AutoDocSyncSystem(configFile, testWorkspace);
       await system.initialize();
 
       // Test with no target files
@@ -841,7 +842,7 @@ export const INVALID = "unclosed string;
       // Create a system with invalid configuration path
       const invalidConfigPath = '/invalid/path/config.json';
       
-      const system = new AutoDocSyncSystem(invalidConfigPath);
+      const system = new AutoDocSyncSystem(invalidConfigPath, testWorkspace);
       
       // Should handle initialization gracefully
       await expect(system.initialize()).resolves.not.toThrow();

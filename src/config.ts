@@ -80,6 +80,7 @@ export class ConfigManager {
    */
   static getDefaultConfig(): SystemConfig {
     return {
+      workspaceRoot: process.cwd(),
       analysis: {
         includePatterns: [
           '**/*.ts',
@@ -123,6 +124,11 @@ export class ConfigManager {
   static validateConfig(config: any): ConfigValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
+
+    // Validate workspace root
+    if (config.workspaceRoot && typeof config.workspaceRoot !== 'string') {
+      errors.push('workspaceRoot must be a string');
+    }
 
     // Validate analysis configuration
     if (config.analysis) {
@@ -204,6 +210,7 @@ export class ConfigManager {
    */
   private static mergeConfigs(defaultConfig: SystemConfig, userConfig: any): SystemConfig {
     return {
+      workspaceRoot: userConfig.workspaceRoot || defaultConfig.workspaceRoot,
       analysis: {
         ...defaultConfig.analysis,
         ...userConfig.analysis
