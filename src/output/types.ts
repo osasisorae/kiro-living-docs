@@ -14,3 +14,24 @@ export interface WriteResult {
   bytesWritten: number;
   errors: string[];
 }
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface MarkdownSection {
+  title: string;
+  content: string;
+  level: number;
+  startLine: number;
+  endLine: number;
+}
+
+export interface FormattingPreservation {
+  originalIndentation: string;
+  lineEndings: '\n' | '\r\n';
+  trailingWhitespace: boolean;
+  emptyLines: number[];
+}
