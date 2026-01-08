@@ -1,98 +1,128 @@
-# Auto-Doc-Sync System
+# Auto-Doc-Sync (Kiro Living Docs)
 
-Autonomous Documentation Synchronization System for Kiro projects.
+Auto-Doc-Sync is a small TypeScript CLI that scans your code changes and keeps Kiro project docs in sync. It can:
 
-## Project Structure
+- Update `.kiro/specs/api.md` with generated API documentation
+- Maintain a single `## Features & API` section in your `README.md` (deduplicated)
+- Write development logs into `.kiro/development-log/` for traceability
+
+This repo contains the tool itself plus tests.
+
+## Quickstart (run this tool)
+
+```bash
+git clone git@github.com:osasisorae/kiro-living-docs.git
+cd kiro-living-docs
+npm install
+npm test
+npm run build
+```
+
+## Use on your own project
+
+You can run Auto-Doc-Sync against any workspace directory:
+
+```bash
+node dist/cli.js --workspace=/absolute/path/to/your/project --trigger=manual
+```
+
+If you run it from inside your project, you can omit `--workspace`:
+
+```bash
+auto-doc-sync --trigger=manual
+```
+
+The CLI supports targeting specific files:
+
+```bash
+auto-doc-sync --trigger=manual --file=src/api.ts --file=src/types.ts
+```
+
+Run `auto-doc-sync --help` for the full list of options.
+
+## Configuration
+
+Auto-Doc-Sync loads configuration in this order:
+
+1. `--config=PATH` (if provided)
+2. `.kiro/auto-doc-sync.json` (in the workspace)
+3. Built-in defaults
+
+Example `.kiro/auto-doc-sync.json`:
+
+```jsonc
+{
+  // Optional: set a workspace root when running from another directory
+  "workspaceRoot": ".",
+  "analysis": {
+    "includePatterns": ["**/*.ts", "**/*.js"],
+    "excludePatterns": ["**/node_modules/**", "**/dist/**"],
+    "maxFileSize": 1048576,
+    "analysisDepth": "shallow"
+  },
+  "output": {
+    "preserveFormatting": true,
+    "backupFiles": true,
+    "validateOutput": true
+  },
+  "logging": {
+    "logDirectory": ".kiro/development-log",
+    "maxEntriesPerFile": 100,
+    "retentionDays": 30,
+    "groupingTimeWindow": 5
+  },
+  "subagent": {
+    "enabled": false,
+    "configPath": ".kiro/subagents/doc-analysis-agent.json"
+  },
+  "hooks": {
+    "enabled": false,
+    "configPath": ".kiro/hooks"
+  }
+}
+```
+
+Notes:
+
+- Relative paths in config (like `logDirectory` or `hooks.configPath`) resolve relative to the workspace root.
+- You can also override the workspace root at runtime using `--workspace=PATH`.
+
+## Generated files
+
+When it runs, Auto-Doc-Sync writes to/updates:
+
+- `.kiro/specs/api.md` (generated API documentation)
+- `.kiro/development-log/*.md` (development logs)
+- `README.md` (only the `## Features & API` section)
+
+## Git hook usage
+
+To run it as part of a git hook (or a Kiro hook), call:
+
+```bash
+auto-doc-sync --trigger=git-hook
+```
+
+## Project structure (tool source)
 
 ```
 src/
-├── types/           # Core TypeScript interfaces and types
 ├── analysis/        # Code analysis and change detection
-├── templates/       # Documentation template management
-├── output/          # File writing and formatting
-├── hooks/           # Kiro Hooks integration
-└── index.ts         # Main entry point
+├── hooks/           # Hook integration
+├── logging/         # Development log writer
+├── output/          # Atomic writes + section updates
+├── templates/       # Documentation templates
+├── types/           # Core TypeScript types
+└── cli.ts           # CLI entrypoint
 ```
 
-## Core Interfaces
-
-- **ChangeAnalysis**: Main analysis result structure
-- **ChangedFile**: Represents a file that has been modified
-- **DocumentationRequirement**: Specifies what documentation needs updating
-- **Template**: Defines reusable documentation templates
-
-## Development
+## Contributing
 
 ```bash
-# Install dependencies
-npm install
-
-# Run tests
 npm test
-
-# Build project
 npm run build
-
-# Development mode
-npm run dev
 ```
-
-## Testing
-
-The project uses property-based testing with fast-check to ensure correctness across all possible inputs. Each property test runs a minimum of 100 iterations to verify system behavior.
 
 ## Features & API
 
-### Features
-
-- **manager**: Updated OutputManager class with 0 methods
-
-### Features
-
-- **manager**: Updated OutputManager class with 0 methods
-
-### Features
-
-- **feature**: Updated FeatureService class with 0 methods
-
-### Features
-
-- **comprehensive-api**: Updated UserManagementService class with 0 methods
-
-### Features
-
-- **manual-test**: Added processData function (string) → any
-
-### API
-
-- **processData(input: string)** → any: Function that takes (string) and returns any
-
-### Features
-
-- **utils**: Added formatDate function (Date) → any
-- **service**: Updated DataService class with 0 methods
-
-### API
-
-- **formatDate(date: Date)** → any: Function that takes (Date) and returns any
-
-### Features
-
-- **api**: Updated UserService class with 0 methods
-
-### Features
-
-- **Code Analysis**: Automatically analyzes TypeScript/JavaScript code changes to extract functions, classes, and API definitions
-- **Template Engine**: Provides reusable documentation templates for consistent formatting across different project components
-- **Output Management**: Handles atomic file writing with formatting preservation and validation
-- **Hook Integration**: Seamlessly integrates with Kiro Hooks for automated triggering on git commits or manual execution
-- **Development Logging**: Creates timestamped development log entries with change descriptions and rationale
-
-### API
-
-- **AutoDocSyncSystem.run(options)** → Promise<void>: Main execution method that coordinates analysis, template processing, and documentation generation
-- **CodeAnalyzer.analyze(changes)** → Promise<ChangeAnalysis>: Analyzes code changes and extracts documentation requirements
-- **TemplateEngine.render(templateType, context)** → Promise<string>: Renders documentation using predefined templates
-- **OutputManager.writeDocumentation(requirements)** → Promise<WriteResult[]>: Writes documentation updates with formatting preservation
-- **DevelopmentLogger.createLogEntry(analysis, rationale)** → Promise<LogEntry>: Creates structured development log entries
-
+This section is auto-generated by Auto-Doc-Sync. Run `auto-doc-sync` to update it.
