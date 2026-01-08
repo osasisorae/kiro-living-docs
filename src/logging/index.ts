@@ -2,8 +2,8 @@
  * Development logging system exports
  */
 
-export { DevelopmentLogger } from './logger.js';
-export * from './types.js';
+export { DevelopmentLogger } from './logger';
+export * from './types';
 
 // Default configuration
 export const DEFAULT_LOG_CONFIG = {

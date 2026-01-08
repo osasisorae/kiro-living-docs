@@ -40,23 +40,3 @@ npm run dev
 ## Testing
 
 The project uses property-based testing with fast-check to ensure correctness across all possible inputs. Each property test runs a minimum of 100 iterations to verify system behavior.
-
-## Features & API
-
-## Features & API
-
-### New Features
-
-- **Enhanced orchestrator**: Enhanced functionality with 1 new exports
-
-### API Endpoints
-
-- **AutoDocSyncSystem.if**: API endpoint
-
-
-## Features & API
-
-### New Features
-
-- **Enhanced logger**: Enhanced functionality with 1 new exports
-

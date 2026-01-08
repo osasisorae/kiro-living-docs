@@ -15,8 +15,8 @@ import {
   ManualContext,
   HookMetadata
 } from './types';
-import { DevelopmentLogger } from '../logging/logger.js';
-import { DEFAULT_LOG_CONFIG } from '../logging/index.js';
+import { DevelopmentLogger } from '../logging/logger';
+import { DEFAULT_LOG_CONFIG } from '../logging/index';
 
 export class HookManager {
   private hooks: Map<string, HookConfig> = new Map();

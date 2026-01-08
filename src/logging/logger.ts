@@ -4,8 +4,8 @@
 
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
-import { LogEntry, LogSession, LogConfig, LogMetadata } from './types.js';
-import { ChangeAnalysis } from '../types/index.js';
+import { LogEntry, LogSession, LogConfig, LogMetadata } from './types';
+import { ChangeAnalysis } from '../types/index';
 
 export class DevelopmentLogger {
   private config: LogConfig;

@@ -1,0 +1,46 @@
+{
+  "analysis": {
+    "includePatterns": [
+      "**/*.ts",
+      "**/*.js",
+      "**/*.tsx",
+      "**/*.jsx"
+    ],
+    "excludePatterns": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/*.d.ts"
+    ],
+    "maxFileSize": 1048576,
+    "analysisDepth": "deep"
+  },
+  "output": {
+    "preserveFormatting": true,
+    "backupFiles": true,
+    "validateOutput": true
+  },
+  "logging": {
+    "logDirectory": ".kiro/development-log",
+    "maxEntriesPerFile": 50,
+    "retentionDays": 90,
+    "groupingTimeWindow": 30
+  },
+  "subagent": {
+    "enabled": true,
+    "configPath": ".kiro/subagents/doc-analysis-agent.json"
+  },
+  "hooks": {
+    "enabled": true,
+    "configPath": ".kiro/hooks"
+  },
+  "_comments": {
+    "analysis": "Configuration for code analysis engine",
+    "output": "Configuration for documentation output",
+    "logging": "Configuration for development logging",
+    "subagent": "Configuration for AI subagent integration",
+    "hooks": "Configuration for Kiro hooks integration"
+  }
+}

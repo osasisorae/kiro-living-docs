@@ -3,11 +3,18 @@
   "version": "1.0.0",
   "description": "Autonomous Documentation Synchronization System for Kiro projects",
   "main": "dist/index.js",
+  "bin": {
+    "auto-doc-sync": "dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "dev": "ts-node src/index.ts",
+    "dev": "ts-node src/cli.ts",
+    "start": "node dist/cli.js",
+    "sync": "ts-node src/cli.ts",
+    "sync:manual": "ts-node src/cli.ts --trigger=manual",
+    "sync:git": "ts-node src/cli.ts --trigger=git-hook",
     "subagent": "ts-node src/subagent/cli.ts",
     "subagent:example": "ts-node src/subagent/example.ts"
   },

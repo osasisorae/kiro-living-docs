@@ -47,16 +47,5 @@ The project uses property-based testing with fast-check to ensure correctness ac
 
 ### New Features
 
-- **Enhanced orchestrator**: Enhanced functionality with 1 new exports
-
-### API Endpoints
-
-- **AutoDocSyncSystem.if**: API endpoint
-
-
-## Features & API
-
-### New Features
-
 - **Enhanced logger**: Enhanced functionality with 1 new exports
 
