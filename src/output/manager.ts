@@ -77,11 +77,17 @@ export class OutputManager {
   private async updateSection(filePath: string, sectionName: string, newContent: string): Promise<string> {
     const originalContent = await fs.readFile(filePath, 'utf8');
     const formatting = this.analyzeFormatting(originalContent);
+    
+    // Skip update if there's no meaningful content to add
+    if (!newContent.trim()) {
+      return originalContent;
+    }
+    
     const sections = this.parseMarkdownSections(originalContent);
     
-    // Handle special case for "Features & API" section - remove all existing instances
+    // Handle special case for "Features & API" section with deduplication
     if (sectionName.toLowerCase().includes('features') && sectionName.toLowerCase().includes('api')) {
-      return this.replaceAllFeaturesAPISections(originalContent, newContent, formatting);
+      return this.updateFeaturesAPISection(originalContent, newContent, formatting);
     }
     
     const sectionIndex = sections.findIndex(s => 
@@ -89,67 +95,160 @@ export class OutputManager {
     );
 
     if (sectionIndex === -1) {
-      // Section doesn't exist, append it only if we have content
-      if (newContent.trim()) {
-        return this.appendSection(originalContent, sectionName, newContent, formatting);
-      }
-      return originalContent;
-    }
-
-    // Replace existing section while preserving formatting
-    if (newContent.trim()) {
-      return this.replaceSection(originalContent, sections[sectionIndex], newContent, formatting);
+      // Section doesn't exist, append it
+      return this.appendSection(originalContent, sectionName, newContent, formatting);
     } else {
-      // Remove section if no content
-      return this.removeSection(originalContent, sections[sectionIndex], formatting);
+      // Replace existing section while preserving formatting
+      return this.replaceSection(originalContent, sections[sectionIndex], newContent, formatting);
     }
   }
 
-  private replaceAllFeaturesAPISections(originalContent: string, newContent: string, formatting: FormattingPreservation): string {
+  private updateFeaturesAPISection(originalContent: string, newContent: string, formatting: FormattingPreservation): string {
     const lines = originalContent.split(/\r?\n/);
-    const newLines: string[] = [];
-    let skipUntilNextSection = false;
-    let addedNewSection = false;
+    const sections = this.parseMarkdownSections(originalContent);
     
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    // Find existing Features & API section
+    const existingSectionIndex = sections.findIndex(s => 
+      s.title.toLowerCase().includes('features') && s.title.toLowerCase().includes('api')
+    );
+    
+    if (existingSectionIndex === -1) {
+      // No existing section, append new one
+      return this.appendSection(originalContent, 'Features & API', newContent, formatting);
+    }
+    
+    const existingSection = sections[existingSectionIndex];
+    const existingContent = this.extractSectionContent(originalContent, existingSection);
+    
+    // Parse existing and new content to deduplicate
+    const mergedContent = this.mergeFeatureAPIContent(existingContent, newContent);
+    
+    // Replace the existing section with merged content
+    return this.replaceSection(originalContent, existingSection, mergedContent, formatting);
+  }
+
+  private mergeFeatureAPIContent(existingContent: string, newContent: string): string {
+    // Parse existing features and APIs
+    const existingFeatures = this.parseFeatureEntries(existingContent);
+    const existingAPIs = this.parseAPIEntries(existingContent);
+    
+    // Parse new features and APIs
+    const newFeatures = this.parseFeatureEntries(newContent);
+    const newAPIs = this.parseAPIEntries(newContent);
+    
+    // Merge and deduplicate
+    const allFeatures = this.deduplicateFeatures([...existingFeatures, ...newFeatures]);
+    const allAPIs = this.deduplicateAPIs([...existingAPIs, ...newAPIs]);
+    
+    // Generate merged content
+    let mergedContent = '';
+    
+    if (allFeatures.length > 0) {
+      mergedContent += '**Features:**\n\n';
+      for (const feature of allFeatures) {
+        mergedContent += `- **${feature.name}**: ${feature.description}\n`;
+      }
+      mergedContent += '\n';
+    }
+    
+    if (allAPIs.length > 0) {
+      mergedContent += '**API:**\n\n';
+      for (const api of allAPIs) {
+        mergedContent += `- **${api.signature}**: ${api.description}\n`;
+      }
+      mergedContent += '\n';
+    }
+    
+    return mergedContent.trim();
+  }
+
+  private parseFeatureEntries(content: string): Array<{name: string, description: string}> {
+    const features: Array<{name: string, description: string}> = [];
+    const lines = content.split(/\r?\n/);
+    let inFeaturesSection = false;
+    
+    for (const line of lines) {
+      if (line.includes('**Features:**') || line.includes('### Features')) {
+        inFeaturesSection = true;
+        continue;
+      }
       
-      if (headerMatch) {
-        const title = headerMatch[2].toLowerCase();
-        if (title.includes('features') && title.includes('api')) {
-          // Skip this section and all content until next section
-          skipUntilNextSection = true;
-          
-          // Add the new content only once
-          if (!addedNewSection && newContent.trim()) {
-            newLines.push(`## Features & API`);
-            newLines.push('');
-            newLines.push(newContent);
-            newLines.push('');
-            addedNewSection = true;
-          }
-          continue;
-        } else if (skipUntilNextSection) {
-          // We've reached the next section, stop skipping
-          skipUntilNextSection = false;
+      if (line.includes('**API:**') || line.includes('### API')) {
+        inFeaturesSection = false;
+        continue;
+      }
+      
+      if (inFeaturesSection && line.trim().startsWith('- **')) {
+        const match = line.match(/- \*\*([^*]+)\*\*:\s*(.+)/);
+        if (match) {
+          features.push({
+            name: match[1].trim(),
+            description: match[2].trim()
+          });
         }
       }
+    }
+    
+    return features;
+  }
+
+  private parseAPIEntries(content: string): Array<{signature: string, description: string}> {
+    const apis: Array<{signature: string, description: string}> = [];
+    const lines = content.split(/\r?\n/);
+    let inAPISection = false;
+    
+    for (const line of lines) {
+      if (line.includes('**API:**') || line.includes('### API')) {
+        inAPISection = true;
+        continue;
+      }
       
-      if (!skipUntilNextSection) {
-        newLines.push(line);
+      if (line.includes('**Features:**') || line.includes('### Features')) {
+        inAPISection = false;
+        continue;
+      }
+      
+      if (inAPISection && line.trim().startsWith('- **')) {
+        const match = line.match(/- \*\*([^*]+)\*\*:\s*(.+)/);
+        if (match) {
+          apis.push({
+            signature: match[1].trim(),
+            description: match[2].trim()
+          });
+        }
       }
     }
     
-    // If we never found a Features & API section but have content, add it at the end
-    if (!addedNewSection && newContent.trim()) {
-      newLines.push('');
-      newLines.push('## Features & API');
-      newLines.push('');
-      newLines.push(newContent);
-    }
-    
-    return newLines.join(formatting.lineEndings);
+    return apis;
+  }
+
+  private deduplicateFeatures(features: Array<{name: string, description: string}>): Array<{name: string, description: string}> {
+    const seen = new Set<string>();
+    return features.filter(feature => {
+      const key = feature.name.toLowerCase();
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
+  private deduplicateAPIs(apis: Array<{signature: string, description: string}>): Array<{signature: string, description: string}> {
+    const seen = new Set<string>();
+    return apis.filter(api => {
+      const key = api.signature.toLowerCase();
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
+  private extractSectionContent(content: string, section: MarkdownSection): string {
+    const lines = content.split(/\r?\n/);
+    return lines.slice(section.startLine + 1, section.endLine + 1).join('\n');
   }
 
   private removeSection(originalContent: string, section: MarkdownSection, formatting: FormattingPreservation): string {

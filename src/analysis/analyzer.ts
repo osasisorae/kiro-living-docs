@@ -626,13 +626,29 @@ export class CodeAnalyzer {
       });
     }
 
-    // README updates for new features
-    if (features.length > 0) {
+    // README updates for new features - only if we have meaningful content
+    const meaningfulFeatures = features.filter(f => 
+      f.name && f.description && 
+      !f.description.toLowerCase().includes('enhanced functionality') &&
+      !f.description.toLowerCase().includes('updated') &&
+      !f.description.toLowerCase().includes('with 0 methods') &&
+      f.description.length > 20
+    );
+    
+    const meaningfulAPIs = apis.filter(api => 
+      api.name && api.description && 
+      !api.description.toLowerCase().includes('api endpoint') &&
+      !api.description.toLowerCase().includes('updated') &&
+      !api.description.toLowerCase().includes('with 0 methods') &&
+      api.description.length > 10
+    );
+    
+    if (meaningfulFeatures.length > 0 || meaningfulAPIs.length > 0) {
       requirements.push({
         type: 'readme-section',
         targetFile: 'README.md',
         section: 'Features & API',
-        content: `Updated features section with ${features.length} changes`,
+        content: `Updated features section with ${meaningfulFeatures.length} features and ${meaningfulAPIs.length} APIs`,
         priority: 'medium'
       });
     }
