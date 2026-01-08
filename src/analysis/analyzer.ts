@@ -1,5 +1,5 @@
 /**
- * Core analyzer implementation for code analysis and change detection
+ * Enhanced analyzer implementation with comprehensive error handling and graceful degradation
  */
 
 import * as fs from 'fs';
@@ -15,32 +15,82 @@ import {
   DocumentationRequirement 
 } from '../types';
 import { AnalysisConfig, AnalysisResult, DiffEntry, KiroContext } from './types';
+import { 
+  ParseError, 
+  FileOperationError, 
+  AnalysisError, 
+  ErrorHandler 
+} from '../templates/errors';
 
 export class CodeAnalyzer {
+  private errorHandler: ErrorHandler = new ErrorHandler();
+
   constructor(private config: AnalysisConfig) {}
 
   async analyze(changes: string[]): Promise<ChangeAnalysis> {
-    const timestamp = new Date().toISOString();
-    const diffEntries = this.parseDiff(changes);
-    const changedFiles = await this.analyzeChangedFiles(diffEntries);
-    const extractedAPIs = this.extractAPIs(changedFiles);
-    const newFeatures = this.identifyNewFeatures(changedFiles);
-    const architecturalChanges = this.identifyArchitecturalChanges(changedFiles);
-    const documentationRequirements = this.generateDocumentationRequirements(
-      extractedAPIs, 
-      newFeatures, 
-      architecturalChanges
-    );
+    try {
+      const timestamp = new Date().toISOString();
+      const diffEntries = await this.parseDiffWithErrorHandling(changes);
+      const changedFiles = await this.analyzeChangedFilesWithErrorHandling(diffEntries);
+      const extractedAPIs = await this.extractAPIsWithErrorHandling(changedFiles);
+      const newFeatures = await this.identifyNewFeaturesWithErrorHandling(changedFiles);
+      const architecturalChanges = await this.identifyArchitecturalChangesWithErrorHandling(changedFiles);
+      const documentationRequirements = this.generateDocumentationRequirements(
+        extractedAPIs, 
+        newFeatures, 
+        architecturalChanges
+      );
 
+      return {
+        timestamp,
+        triggerType: 'manual',
+        changedFiles,
+        extractedAPIs,
+        newFeatures,
+        architecturalChanges,
+        documentationRequirements
+      };
+    } catch (error) {
+      // Graceful degradation - return minimal analysis if complete analysis fails
+      const fallbackAnalysis = await this.errorHandler.handleError(error instanceof Error ? error : new Error(String(error)), this.createFallbackAnalysis());
+      return fallbackAnalysis;
+    }
+  }
+
+  private createFallbackAnalysis(): ChangeAnalysis {
     return {
-      timestamp,
+      timestamp: new Date().toISOString(),
       triggerType: 'manual',
-      changedFiles,
-      extractedAPIs,
-      newFeatures,
-      architecturalChanges,
-      documentationRequirements
+      changedFiles: [],
+      extractedAPIs: [],
+      newFeatures: [],
+      architecturalChanges: [],
+      documentationRequirements: [{
+        type: 'dev-log',
+        targetFile: '.kiro/development-log/analysis-error.md',
+        content: 'Analysis failed - manual review required',
+        priority: 'high'
+      }]
     };
+  }
+
+  /**
+   * Parse diff output into structured entries with error handling
+   */
+  private async parseDiffWithErrorHandling(changes: string[]): Promise<DiffEntry[]> {
+    try {
+      return this.parseDiff(changes);
+    } catch (error) {
+      const parseError = new ParseError(
+        'Failed to parse diff output',
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+      
+      // Try to recover with simplified parsing
+      const recovered = await this.errorHandler.handleError(parseError, []);
+      return recovered;
+    }
   }
 
   /**
@@ -50,43 +100,75 @@ export class CodeAnalyzer {
     const entries: DiffEntry[] = [];
     
     for (const change of changes) {
-      const lines = change.split('\n');
-      let currentFile = '';
-      let changeType: 'added' | 'modified' | 'deleted' = 'modified';
-      let diffContent = '';
+      try {
+        const lines = change.split('\n');
+        let currentFile = '';
+        let changeType: 'added' | 'modified' | 'deleted' = 'modified';
+        let diffContent = '';
 
-      for (const line of lines) {
-        if (line.startsWith('diff --git')) {
-          // Extract file path from git diff header
-          const match = line.match(/diff --git a\/(.+) b\/(.+)/);
-          if (match) {
-            currentFile = match[2];
+        for (const line of lines) {
+          if (line.startsWith('diff --git')) {
+            // Extract file path from git diff header
+            const match = line.match(/diff --git a\/(.+) b\/(.+)/);
+            if (match) {
+              currentFile = match[2];
+            }
+          } else if (line.startsWith('new file mode')) {
+            changeType = 'added';
+          } else if (line.startsWith('deleted file mode')) {
+            changeType = 'deleted';
+          } else if (line.startsWith('+++') || line.startsWith('---')) {
+            // Skip file headers
+            continue;
+          } else if (line.startsWith('@@')) {
+            // Include hunk headers in diff content
+            diffContent += line + '\n';
+          } else if (line.startsWith('+') || line.startsWith('-') || line.startsWith(' ')) {
+            diffContent += line + '\n';
           }
-        } else if (line.startsWith('new file mode')) {
-          changeType = 'added';
-        } else if (line.startsWith('deleted file mode')) {
-          changeType = 'deleted';
-        } else if (line.startsWith('+++') || line.startsWith('---')) {
-          // Skip file headers
-          continue;
-        } else if (line.startsWith('@@')) {
-          // Include hunk headers in diff content
-          diffContent += line + '\n';
-        } else if (line.startsWith('+') || line.startsWith('-') || line.startsWith(' ')) {
-          diffContent += line + '\n';
         }
-      }
 
-      if (currentFile) {
-        entries.push({
-          path: currentFile,
-          changeType,
-          diffContent: diffContent.trim()
-        });
+        if (currentFile) {
+          entries.push({
+            path: currentFile,
+            changeType,
+            diffContent: diffContent.trim()
+          });
+        }
+      } catch (error) {
+        // Skip malformed diff entries but continue processing others
+        console.warn(`Failed to parse diff entry: ${error}`);
+        continue;
       }
     }
 
     return entries;
+  }
+
+  /**
+   * Analyze changed files to extract functions and classes with error handling
+   */
+  private async analyzeChangedFilesWithErrorHandling(diffEntries: DiffEntry[]): Promise<ChangedFile[]> {
+    try {
+      return await this.analyzeChangedFiles(diffEntries);
+    } catch (error) {
+      const analysisError = new AnalysisError(
+        'Failed to analyze changed files',
+        'ast',
+        error instanceof Error ? error : undefined
+      );
+      
+      // Return minimal file information without detailed analysis
+      const fallbackFiles = diffEntries.map(entry => ({
+        path: entry.path,
+        changeType: entry.changeType,
+        diffContent: entry.diffContent,
+        extractedFunctions: [],
+        extractedClasses: []
+      }));
+      
+      return await this.errorHandler.handleError(analysisError, fallbackFiles);
+    }
   }
 
   /**
@@ -96,33 +178,33 @@ export class CodeAnalyzer {
     const changedFiles: ChangedFile[] = [];
 
     for (const entry of diffEntries) {
-      if (entry.changeType === 'deleted') {
-        changedFiles.push({
-          path: entry.path,
-          changeType: entry.changeType,
-          diffContent: entry.diffContent,
-          extractedFunctions: [],
-          extractedClasses: []
-        });
-        continue;
-      }
-
-      // Only analyze TypeScript/JavaScript files
-      if (!this.isAnalyzableFile(entry.path)) {
-        changedFiles.push({
-          path: entry.path,
-          changeType: entry.changeType,
-          diffContent: entry.diffContent,
-          extractedFunctions: [],
-          extractedClasses: []
-        });
-        continue;
-      }
-
       try {
-        const fileContent = await this.getFileContent(entry.path);
-        const extractedFunctions = this.extractFunctions(fileContent);
-        const extractedClasses = this.extractClasses(fileContent);
+        if (entry.changeType === 'deleted') {
+          changedFiles.push({
+            path: entry.path,
+            changeType: entry.changeType,
+            diffContent: entry.diffContent,
+            extractedFunctions: [],
+            extractedClasses: []
+          });
+          continue;
+        }
+
+        // Only analyze TypeScript/JavaScript files
+        if (!this.isAnalyzableFile(entry.path)) {
+          changedFiles.push({
+            path: entry.path,
+            changeType: entry.changeType,
+            diffContent: entry.diffContent,
+            extractedFunctions: [],
+            extractedClasses: []
+          });
+          continue;
+        }
+
+        const fileContent = await this.getFileContentWithErrorHandling(entry.path);
+        const extractedFunctions = await this.extractFunctionsWithErrorHandling(fileContent, entry.path);
+        const extractedClasses = await this.extractClassesWithErrorHandling(fileContent, entry.path);
 
         changedFiles.push({
           path: entry.path,
@@ -132,7 +214,7 @@ export class CodeAnalyzer {
           extractedClasses
         });
       } catch (error) {
-        // If file can't be read, still include it with empty extractions
+        // If individual file analysis fails, include it with empty extractions
         changedFiles.push({
           path: entry.path,
           changeType: entry.changeType,
@@ -146,6 +228,108 @@ export class CodeAnalyzer {
     return changedFiles;
   }
 
+  /**
+   * Extract function definitions from TypeScript/JavaScript code using regex with error handling
+   */
+  private async extractFunctionsWithErrorHandling(code: string, filePath: string): Promise<FunctionDefinition[]> {
+    try {
+      return this.extractFunctions(code);
+    } catch (error) {
+      const parseError = new ParseError(
+        'Failed to extract functions',
+        filePath,
+        error instanceof Error ? error : undefined
+      );
+      
+      return await this.errorHandler.handleError(parseError, []);
+    }
+  }
+
+  /**
+   * Extract class definitions from TypeScript/JavaScript code using regex with error handling
+   */
+  private async extractClassesWithErrorHandling(code: string, filePath: string): Promise<ClassDefinition[]> {
+    try {
+      return this.extractClasses(code);
+    } catch (error) {
+      const parseError = new ParseError(
+        'Failed to extract classes',
+        filePath,
+        error instanceof Error ? error : undefined
+      );
+      
+      return await this.errorHandler.handleError(parseError, []);
+    }
+  }
+
+  /**
+   * Get file content with error handling
+   */
+  private async getFileContentWithErrorHandling(filePath: string): Promise<string> {
+    try {
+      return await this.getFileContent(filePath);
+    } catch (error) {
+      const fileError = new FileOperationError(
+        'Failed to read file',
+        'read',
+        filePath,
+        error instanceof Error ? error : undefined
+      );
+      
+      return await this.errorHandler.handleError(fileError, '');
+    }
+  }
+
+  /**
+   * Extract APIs with error handling
+   */
+  private async extractAPIsWithErrorHandling(changedFiles: ChangedFile[]): Promise<APIDefinition[]> {
+    try {
+      return this.extractAPIs(changedFiles);
+    } catch (error) {
+      const analysisError = new AnalysisError(
+        'Failed to extract APIs',
+        'classification',
+        error instanceof Error ? error : undefined
+      );
+      
+      return await this.errorHandler.handleError(analysisError, []);
+    }
+  }
+
+  /**
+   * Identify new features with error handling
+   */
+  private async identifyNewFeaturesWithErrorHandling(changedFiles: ChangedFile[]): Promise<FeatureDescription[]> {
+    try {
+      return this.identifyNewFeatures(changedFiles);
+    } catch (error) {
+      const analysisError = new AnalysisError(
+        'Failed to identify new features',
+        'classification',
+        error instanceof Error ? error : undefined
+      );
+      
+      return await this.errorHandler.handleError(analysisError, []);
+    }
+  }
+
+  /**
+   * Identify architectural changes with error handling
+   */
+  private async identifyArchitecturalChangesWithErrorHandling(changedFiles: ChangedFile[]): Promise<ArchitecturalChange[]> {
+    try {
+      return this.identifyArchitecturalChanges(changedFiles);
+    } catch (error) {
+      const analysisError = new AnalysisError(
+        'Failed to identify architectural changes',
+        'classification',
+        error instanceof Error ? error : undefined
+      );
+      
+      return await this.errorHandler.handleError(analysisError, []);
+    }
+  }
   /**
    * Extract function definitions from TypeScript/JavaScript code using regex
    */
