@@ -453,11 +453,18 @@ export class CodeAnalyzer {
       // Look for exported functions that might be APIs
       for (const func of file.extractedFunctions) {
         if (func.isExported) {
+          // Generate meaningful description if documentation is missing
+          let description = func.documentation;
+          if (!description || description.trim().length === 0) {
+            const paramTypes = func.parameters.map(p => p.type).join(', ');
+            description = `Function that takes (${paramTypes}) and returns ${func.returnType}`;
+          }
+          
           apis.push({
             name: func.name,
             parameters: func.parameters,
             returnType: func.returnType,
-            description: func.documentation
+            description
           });
         }
       }
@@ -466,11 +473,18 @@ export class CodeAnalyzer {
       for (const cls of file.extractedClasses) {
         if (cls.isExported) {
           for (const method of cls.methods) {
+            // Generate meaningful description if documentation is missing
+            let description = method.documentation;
+            if (!description || description.trim().length === 0) {
+              const paramTypes = method.parameters.map(p => p.type).join(', ');
+              description = `${cls.name} method that takes (${paramTypes}) and returns ${method.returnType}`;
+            }
+            
             apis.push({
               name: `${cls.name}.${method.name}`,
               parameters: method.parameters,
               returnType: method.returnType,
-              description: method.documentation
+              description
             });
           }
         }
@@ -490,24 +504,56 @@ export class CodeAnalyzer {
       if (file.changeType === 'added') {
         // New files likely represent new features
         const featureName = path.basename(file.path, path.extname(file.path));
+        const fileType = this.getFileType(file.path);
+        
+        // Generate meaningful description based on file content
+        let description = `New ${fileType} component`;
+        
+        if (file.extractedFunctions.length > 0 || file.extractedClasses.length > 0) {
+          const functions = file.extractedFunctions.filter(f => f.isExported);
+          const classes = file.extractedClasses.filter(c => c.isExported);
+          
+          if (classes.length > 0) {
+            description = `New ${classes[0].name} class with ${classes[0].methods.length} methods`;
+          } else if (functions.length > 0) {
+            const mainFunction = functions[0];
+            description = `New ${mainFunction.name} function (${mainFunction.parameters.map(p => p.type).join(', ')}) → ${mainFunction.returnType}`;
+          }
+        }
+        
         features.push({
           name: featureName,
-          description: `New ${this.getFileType(file.path)} component`,
+          description,
           affectedFiles: [file.path],
           category: 'new'
         });
       } else if (file.changeType === 'modified') {
         // Look for new exported functions/classes in modified files
-        const newExports = file.extractedFunctions.filter(f => f.isExported).length +
-                          file.extractedClasses.filter(c => c.isExported).length;
+        const newExportedFunctions = file.extractedFunctions.filter(f => f.isExported);
+        const newExportedClasses = file.extractedClasses.filter(c => c.isExported);
         
-        if (newExports > 0) {
-          features.push({
-            name: `Enhanced ${path.basename(file.path, path.extname(file.path))}`,
-            description: `Enhanced functionality with ${newExports} new exports`,
-            affectedFiles: [file.path],
-            category: 'enhanced'
-          });
+        // Only create feature entries for meaningful changes
+        if (newExportedFunctions.length > 0 || newExportedClasses.length > 0) {
+          const fileName = path.basename(file.path, path.extname(file.path));
+          let description = '';
+          
+          if (newExportedClasses.length > 0) {
+            const mainClass = newExportedClasses[0];
+            description = `Updated ${mainClass.name} class with ${mainClass.methods.length} methods`;
+          } else if (newExportedFunctions.length > 0) {
+            const mainFunction = newExportedFunctions[0];
+            description = `Added ${mainFunction.name} function (${mainFunction.parameters.map(p => p.type).join(', ')}) → ${mainFunction.returnType}`;
+          }
+          
+          // Only add if we have a meaningful description
+          if (description && !description.includes('Enhanced functionality')) {
+            features.push({
+              name: fileName,
+              description,
+              affectedFiles: [file.path],
+              category: 'enhanced'
+            });
+          }
         }
       }
     }

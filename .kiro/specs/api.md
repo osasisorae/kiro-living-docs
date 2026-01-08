@@ -13,7 +13,7 @@ API documentation generated from code analysis
 
 
 
-
+Function that takes (string) and returns any
 
 
 
@@ -23,4 +23,4 @@ API documentation generated from code analysis
 
 
 ---
-*Generated on 2026-01-08T12:06:24.831Z*
+*Generated on 2026-01-08T13:53:39.124Z*

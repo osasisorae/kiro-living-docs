@@ -79,17 +79,85 @@ export class OutputManager {
     const formatting = this.analyzeFormatting(originalContent);
     const sections = this.parseMarkdownSections(originalContent);
     
+    // Handle special case for "Features & API" section - remove all existing instances
+    if (sectionName.toLowerCase().includes('features') && sectionName.toLowerCase().includes('api')) {
+      return this.replaceAllFeaturesAPISections(originalContent, newContent, formatting);
+    }
+    
     const sectionIndex = sections.findIndex(s => 
       s.title.toLowerCase().includes(sectionName.toLowerCase())
     );
 
     if (sectionIndex === -1) {
-      // Section doesn't exist, append it
-      return this.appendSection(originalContent, sectionName, newContent, formatting);
+      // Section doesn't exist, append it only if we have content
+      if (newContent.trim()) {
+        return this.appendSection(originalContent, sectionName, newContent, formatting);
+      }
+      return originalContent;
     }
 
     // Replace existing section while preserving formatting
-    return this.replaceSection(originalContent, sections[sectionIndex], newContent, formatting);
+    if (newContent.trim()) {
+      return this.replaceSection(originalContent, sections[sectionIndex], newContent, formatting);
+    } else {
+      // Remove section if no content
+      return this.removeSection(originalContent, sections[sectionIndex], formatting);
+    }
+  }
+
+  private replaceAllFeaturesAPISections(originalContent: string, newContent: string, formatting: FormattingPreservation): string {
+    const lines = originalContent.split(/\r?\n/);
+    const newLines: string[] = [];
+    let skipUntilNextSection = false;
+    let addedNewSection = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+      
+      if (headerMatch) {
+        const title = headerMatch[2].toLowerCase();
+        if (title.includes('features') && title.includes('api')) {
+          // Skip this section and all content until next section
+          skipUntilNextSection = true;
+          
+          // Add the new content only once
+          if (!addedNewSection && newContent.trim()) {
+            newLines.push(`## Features & API`);
+            newLines.push('');
+            newLines.push(newContent);
+            newLines.push('');
+            addedNewSection = true;
+          }
+          continue;
+        } else if (skipUntilNextSection) {
+          // We've reached the next section, stop skipping
+          skipUntilNextSection = false;
+        }
+      }
+      
+      if (!skipUntilNextSection) {
+        newLines.push(line);
+      }
+    }
+    
+    // If we never found a Features & API section but have content, add it at the end
+    if (!addedNewSection && newContent.trim()) {
+      newLines.push('');
+      newLines.push('## Features & API');
+      newLines.push('');
+      newLines.push(newContent);
+    }
+    
+    return newLines.join(formatting.lineEndings);
+  }
+
+  private removeSection(originalContent: string, section: MarkdownSection, formatting: FormattingPreservation): string {
+    const lines = originalContent.split(/\r?\n/);
+    const beforeSection = lines.slice(0, section.startLine);
+    const afterSection = lines.slice(section.endLine + 1);
+    
+    return [...beforeSection, ...afterSection].join(formatting.lineEndings);
   }
 
   private analyzeFormatting(content: string): FormattingPreservation {

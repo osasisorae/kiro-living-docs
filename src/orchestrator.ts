@@ -282,39 +282,48 @@ export class AutoDocSyncSystem {
    * Generate README update content
    */
   private async generateREADMEUpdate(analysis: ChangeAnalysis): Promise<string> {
-    const context = {
-      variables: {
-        features: analysis.newFeatures,
-        apis: analysis.extractedAPIs,
-        title: 'Features & API'
-      },
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        version: '1.0.0',
-        source: 'Auto-Doc-Sync System'
-      }
-    };
+    // Generate meaningful content based on actual analysis
+    let content = '';
     
-    // Use a simple template for README updates
-    let content = '## Features & API\n\n';
+    // Only add sections if we have meaningful content
+    const meaningfulFeatures = analysis.newFeatures.filter(f => 
+      f.name && f.description && 
+      !f.description.includes('Enhanced functionality') &&
+      f.description.length > 10
+    );
     
-    if (analysis.newFeatures.length > 0) {
-      content += '### New Features\n\n';
-      for (const feature of analysis.newFeatures) {
+    const meaningfulAPIs = analysis.extractedAPIs.filter(api => 
+      api.name && api.description && 
+      !api.description.includes('API endpoint') &&
+      api.description.length > 5
+    );
+    
+    if (meaningfulFeatures.length > 0) {
+      content += '### Features\n\n';
+      for (const feature of meaningfulFeatures) {
         content += `- **${feature.name}**: ${feature.description}\n`;
       }
       content += '\n';
     }
     
-    if (analysis.extractedAPIs.length > 0) {
-      content += '### API Endpoints\n\n';
-      for (const api of analysis.extractedAPIs) {
-        content += `- **${api.name}**: ${api.description || 'API endpoint'}\n`;
+    if (meaningfulAPIs.length > 0) {
+      content += '### API\n\n';
+      for (const api of meaningfulAPIs) {
+        const params = api.parameters && api.parameters.length > 0 
+          ? `(${api.parameters.map(p => `${p.name}: ${p.type}`).join(', ')})` 
+          : '()';
+        const returnType = api.returnType && api.returnType !== 'void' ? ` → ${api.returnType}` : '';
+        content += `- **${api.name}${params}**${returnType}: ${api.description}\n`;
       }
       content += '\n';
     }
     
-    return content;
+    // If no meaningful content, return empty string to avoid updating
+    if (!content.trim()) {
+      return '';
+    }
+    
+    return content.trim();
   }
 
   /**

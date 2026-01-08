@@ -49,10 +49,6 @@ The project uses property-based testing with fast-check to ensure correctness ac
 
 ### Features
 
-- **manager**: Updated OutputManager class with 0 methods
-
-### Features
-
 - **feature**: Updated FeatureService class with 0 methods
 
 ### Features
