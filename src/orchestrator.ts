@@ -311,26 +311,32 @@ export class AutoDocSyncSystem {
     // Only add sections if we have meaningful content
     const meaningfulFeatures = analysis.newFeatures.filter(f => 
       f.name && f.description && 
-      !f.description.includes('Enhanced functionality') &&
-      f.description.length > 10
+      !f.description.toLowerCase().includes('enhanced functionality') &&
+      !f.description.toLowerCase().includes('updated') &&
+      !f.description.toLowerCase().includes('with 0 methods') &&
+      f.description.length > 20
     );
     
     const meaningfulAPIs = analysis.extractedAPIs.filter(api => 
       api.name && api.description && 
-      !api.description.includes('API endpoint') &&
-      api.description.length > 5
+      !api.description.toLowerCase().includes('api endpoint') &&
+      !api.description.toLowerCase().includes('updated') &&
+      !api.description.toLowerCase().includes('with 0 methods') &&
+      api.description.length > 10
     );
     
+    // Generate features content without nested headers
     if (meaningfulFeatures.length > 0) {
-      content += '### Features\n\n';
+      content += '**Features:**\n\n';
       for (const feature of meaningfulFeatures) {
         content += `- **${feature.name}**: ${feature.description}\n`;
       }
       content += '\n';
     }
     
+    // Generate API content without nested headers
     if (meaningfulAPIs.length > 0) {
-      content += '### API\n\n';
+      content += '**API:**\n\n';
       for (const api of meaningfulAPIs) {
         const params = api.parameters && api.parameters.length > 0 
           ? `(${api.parameters.map(p => `${p.name}: ${p.type}`).join(', ')})` 
