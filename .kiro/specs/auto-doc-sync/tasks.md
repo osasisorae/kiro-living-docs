@@ -80,18 +80,18 @@
   - **Property 10: Related change grouping**
   - **Validates: Requirements 4.3**
 
-- [ ] 6. Create Kiro Hook system integration
+- [x] 6. Create Kiro Hook system integration
   - Implement hook configuration templates for git post-commit events
   - Create manual trigger command interface
   - Build context passing mechanism for hook executions
   - Add comprehensive logging for hook execution results and errors
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 6.1 Write property test for hook context passing
+- [x] 6.1 Write property test for hook context passing
   - **Property 11: Hook context passing**
   - **Validates: Requirements 5.3**
 
-- [ ] 6.2 Write property test for hook execution logging
+- [x] 6.2 Write property test for hook execution logging
   - **Property 12: Hook execution logging**
   - **Validates: Requirements 5.4**
 
