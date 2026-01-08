@@ -213,4 +213,68 @@ describe('OutputManager Property Tests', () => {
       { numRuns: 100 }
     );
   });
+
+  it('should replace nested headings inside a section when updating "Features & API"', async () => {
+    const readme = `# Demo
+
+## Features & API
+
+### Features
+
+- **Old**: old desc
+
+### API
+
+- **oldApi()**: old api
+
+## Installation
+
+text
+`;
+
+    const testFile = path.join(testDir, `readme-dup-test-${Date.now()}-${Math.random()}.md`);
+    await fs.writeFile(testFile, readme);
+
+    const update: DocumentationRequirement = {
+      type: 'readme-section',
+      targetFile: testFile,
+      section: 'Features & API',
+      content: `**Features:**
+
+- **New**: new desc
+
+**API:**
+
+- **newApi()**: new api`,
+      priority: 'medium',
+    };
+
+    await outputManager.writeDocumentation([update]);
+    await outputManager.writeDocumentation([update]);
+
+    const updated = await fs.readFile(testFile, 'utf8');
+
+    expect(updated).toContain('## Features & API');
+    expect(updated).toContain('**Features:**');
+    expect(updated).toContain('**API:**');
+    expect(updated).toContain('- **New**: new desc');
+    expect(updated).toContain('- **newApi()**: new api');
+
+    // Nested headings should be replaced (no leftover "### Features"/"### API" blocks).
+    expect(updated).not.toContain('### Features');
+    expect(updated).not.toContain('### API');
+
+    // Running the update twice should not duplicate the generated blocks.
+    expect(updated.match(/\*\*Features:\*\*/g) ?? []).toHaveLength(1);
+    expect(updated.match(/\*\*API:\*\*/g) ?? []).toHaveLength(1);
+
+    expect(updated.match(/- \*\*New\*\*: new desc/g) ?? []).toHaveLength(1);
+    expect(updated.match(/- \*\*newApi\(\)\*\*: new api/g) ?? []).toHaveLength(1);
+    expect(updated.match(/- \*\*Old\*\*: old desc/g) ?? []).toHaveLength(1);
+    expect(updated.match(/- \*\*oldApi\(\)\*\*: old api/g) ?? []).toHaveLength(1);
+
+    // Content after the section should remain.
+    expect(updated).toContain('## Installation');
+    expect(updated).toContain('text');
+  });
 });
