@@ -18,15 +18,17 @@ export { AutoDocSyncSystem };
 // CLI entry point
 export async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const system = new AutoDocSyncSystem();
+  
+  // Parse command line arguments
+  const triggerType = args.find(arg => arg.startsWith('--trigger='))?.split('=')[1] as 'git-hook' | 'manual' || 'manual';
+  const configPath = args.find(arg => arg.startsWith('--config='))?.split('=')[1];
+  const workspaceRoot = args.find(arg => arg.startsWith('--workspace='))?.split('=')[1];
+  const targetFiles = args.filter(arg => arg.startsWith('--file=')).map(arg => arg.split('=')[1]);
+  
+  const system = new AutoDocSyncSystem(configPath, workspaceRoot);
   
   try {
     await system.initialize();
-    
-    // Parse command line arguments
-    const triggerType = args.find(arg => arg.startsWith('--trigger='))?.split('=')[1] as 'git-hook' | 'manual' || 'manual';
-    const configPath = args.find(arg => arg.startsWith('--config='))?.split('=')[1];
-    const targetFiles = args.filter(arg => arg.startsWith('--file=')).map(arg => arg.split('=')[1]);
     
     await system.run({
       triggerType,

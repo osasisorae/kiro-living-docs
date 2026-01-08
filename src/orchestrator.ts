@@ -18,6 +18,7 @@ import { OutputConfig } from './output/types';
 import { DEFAULT_LOG_CONFIG } from './logging';
 
 export interface SystemConfig {
+  workspaceRoot?: string;
   analysis: AnalysisConfig;
   output: OutputConfig;
   logging: {
@@ -45,6 +46,7 @@ export interface RunOptions {
 
 export class AutoDocSyncSystem {
   private config: SystemConfig;
+  private workspaceRoot: string;
   private analyzer: CodeAnalyzer;
   private templateEngine: TemplateEngine;
   private outputManager: OutputManager;
@@ -53,27 +55,48 @@ export class AutoDocSyncSystem {
   private subagentIntegration?: SubagentIntegration;
   private initialized = false;
 
-  constructor(configPath?: string) {
+  constructor(configPath?: string, workspaceRoot?: string) {
+    this.workspaceRoot = workspaceRoot || process.cwd();
     this.config = ConfigManager.loadConfig(configPath);
     
+    // Constructor workspace root takes precedence over config file workspace root
+    if (workspaceRoot) {
+      this.workspaceRoot = path.resolve(workspaceRoot);
+    } else if (this.config.workspaceRoot) {
+      this.workspaceRoot = path.resolve(this.config.workspaceRoot);
+    }
+    
     // Initialize core components
-    this.analyzer = new CodeAnalyzer(this.config.analysis);
+    this.analyzer = new CodeAnalyzer(this.config.analysis, this.resolveWorkspacePath.bind(this));
     this.templateEngine = new TemplateEngine();
     this.outputManager = new OutputManager(this.config.output);
-    this.hookManager = new HookManager(this.config.logging.logDirectory);
-    this.logger = new DevelopmentLogger(this.config.logging);
+    this.hookManager = new HookManager(this.resolveWorkspacePath(this.config.logging.logDirectory));
+    this.logger = new DevelopmentLogger({
+      ...this.config.logging,
+      logDirectory: this.resolveWorkspacePath(this.config.logging.logDirectory)
+    });
     
     // Initialize subagent integration if enabled
     if (this.config.subagent.enabled) {
       try {
         this.subagentIntegration = new SubagentIntegration(
           this.config.analysis,
-          this.config.subagent.configPath
+          this.config.subagent.configPath ? this.resolveWorkspacePath(this.config.subagent.configPath) : undefined
         );
       } catch (error) {
         console.warn('Subagent integration failed to initialize, continuing without it:', error);
       }
     }
+  }
+
+  /**
+   * Resolve a path relative to the workspace root
+   */
+  private resolveWorkspacePath(relativePath: string): string {
+    if (path.isAbsolute(relativePath)) {
+      return relativePath;
+    }
+    return path.join(this.workspaceRoot, relativePath);
   }
 
   /**
@@ -93,7 +116,7 @@ export class AutoDocSyncSystem {
       
       // Load hook configurations
       if (this.config.hooks.enabled) {
-        await this.hookManager.loadHookConfigs(this.config.hooks.configPath);
+        await this.hookManager.loadHookConfigs(this.resolveWorkspacePath(this.config.hooks.configPath));
       }
       
       // Validate system health
@@ -161,7 +184,7 @@ export class AutoDocSyncSystem {
           architecturalChanges: [],
           documentationRequirements: [{
             type: 'dev-log',
-            targetFile: '.kiro/development-log/error.md',
+            targetFile: this.resolveWorkspacePath(path.join(this.config.logging.logDirectory, 'error.md')),
             content: `System error: ${error instanceof Error ? error.message : String(error)}`,
             priority: 'high'
           }]
@@ -268,7 +291,7 @@ export class AutoDocSyncSystem {
         return await this.subagentIntegration.generateDocumentation(
           analysis,
           'api-doc',
-          '.kiro/specs/api.md'
+          this.resolveWorkspacePath('.kiro/specs/api.md')
         );
       } catch (error) {
         console.warn('Subagent documentation generation failed, using template engine:', error);
@@ -387,11 +410,11 @@ export class AutoDocSyncSystem {
    */
   private async ensureDirectories(): Promise<void> {
     const directories = [
-      '.kiro',
-      '.kiro/specs',
-      '.kiro/development-log',
-      '.kiro/hooks',
-      '.kiro/subagents'
+      this.resolveWorkspacePath('.kiro'),
+      this.resolveWorkspacePath('.kiro/specs'),
+      this.resolveWorkspacePath(this.config.logging.logDirectory),
+      this.resolveWorkspacePath(this.config.hooks.configPath),
+      this.resolveWorkspacePath('.kiro/subagents')
     ];
 
     for (const dir of directories) {

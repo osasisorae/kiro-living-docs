@@ -24,8 +24,11 @@ import {
 
 export class CodeAnalyzer {
   private errorHandler: ErrorHandler = new ErrorHandler();
+  private pathResolver: (relativePath: string) => string;
 
-  constructor(private config: AnalysisConfig) {}
+  constructor(private config: AnalysisConfig, pathResolver?: (relativePath: string) => string) {
+    this.pathResolver = pathResolver || ((relativePath: string) => relativePath);
+  }
 
   async analyze(changes: string[]): Promise<ChangeAnalysis> {
     try {
@@ -67,7 +70,7 @@ export class CodeAnalyzer {
       architecturalChanges: [],
       documentationRequirements: [{
         type: 'dev-log',
-        targetFile: '.kiro/development-log/analysis-error.md',
+        targetFile: this.pathResolver('.kiro/development-log/analysis-error.md'),
         content: 'Analysis failed - manual review required',
         priority: 'high'
       }]
@@ -617,7 +620,7 @@ export class CodeAnalyzer {
     if (apis.length > 0) {
       requirements.push({
         type: 'api-spec',
-        targetFile: '.kiro/specs/api.md',
+        targetFile: this.pathResolver('.kiro/specs/api.md'),
         content: `Updated API documentation for ${apis.length} APIs`,
         priority: 'high'
       });
@@ -634,19 +637,16 @@ export class CodeAnalyzer {
       });
     }
 
-    // Development log entry
-    if (apis.length > 0 || features.length > 0 || changes.length > 0) {
-      // Generate a timestamped filename for the development log
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `analysis-${timestamp}.md`;
-      
-      requirements.push({
-        type: 'dev-log',
-        targetFile: `.kiro/development-log/${filename}`,
-        content: `Development log entry for analysis results`,
-        priority: 'low'
-      });
-    }
+    // Development log entry - always create one when analysis runs
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `analysis-${timestamp}.md`;
+    
+    requirements.push({
+      type: 'dev-log',
+      targetFile: this.pathResolver(`.kiro/development-log/${filename}`),
+      content: `Development log entry for analysis results`,
+      priority: 'low'
+    });
 
     return requirements;
   }
