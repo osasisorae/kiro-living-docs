@@ -7,6 +7,7 @@ export * from './analysis';
 export * from './templates';
 export * from './output';
 export * from './hooks';
+export * from './logging';
 
 // Main system class - placeholder for future implementation
 export class AutoDocSyncSystem {
