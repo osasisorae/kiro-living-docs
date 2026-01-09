@@ -68,12 +68,7 @@ export class CodeAnalyzer {
       extractedAPIs: [],
       newFeatures: [],
       architecturalChanges: [],
-      documentationRequirements: [{
-        type: 'dev-log',
-        targetFile: this.pathResolver('.kiro/development-log/analysis-error.md'),
-        content: 'Analysis failed - manual review required',
-        priority: 'high'
-      }]
+      documentationRequirements: []
     };
   }
 
@@ -652,17 +647,6 @@ export class CodeAnalyzer {
         priority: 'medium'
       });
     }
-
-    // Development log entry - always create one when analysis runs
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `analysis-${timestamp}.md`;
-    
-    requirements.push({
-      type: 'dev-log',
-      targetFile: this.pathResolver(`.kiro/development-log/${filename}`),
-      content: `Development log entry for analysis results`,
-      priority: 'low'
-    });
 
     return requirements;
   }
