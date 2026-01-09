@@ -212,6 +212,17 @@ export class AutoDocSyncSystem {
       const changes = await this.detectChanges(options);
       if (changes.length === 0) {
         console.log('No changes detected, skipping documentation sync');
+        // Still create a log entry for tracking purposes
+        const emptyAnalysis: ChangeAnalysis = {
+          timestamp: new Date().toISOString(),
+          triggerType: options.triggerType,
+          changedFiles: [],
+          extractedAPIs: [],
+          newFeatures: [],
+          architecturalChanges: [],
+          documentationRequirements: []
+        };
+        await this.createLogEntry(emptyAnalysis, options);
         return;
       }
 
@@ -222,6 +233,8 @@ export class AutoDocSyncSystem {
       const requirements = analysis.documentationRequirements;
       if (requirements.length === 0) {
         console.log('No documentation updates required');
+        // Still create a log entry for tracking purposes
+        await this.createLogEntry(analysis, options);
         return;
       }
 
@@ -318,8 +331,6 @@ export class AutoDocSyncSystem {
           content = await this.generateAPIDocumentation(analysis);
         } else if (requirement.type === 'readme-section') {
           content = await this.generateREADMEUpdate(analysis);
-        } else if (requirement.type === 'dev-log') {
-          content = await this.generateDevLogContent(analysis);
         }
         
         processedRequirements.push({
@@ -420,18 +431,6 @@ export class AutoDocSyncSystem {
     }
     
     return content.trim();
-  }
-
-  /**
-   * Generate development log content
-   */
-  private async generateDevLogContent(analysis: ChangeAnalysis): Promise<string> {
-    const logEntry = await this.logger.createLogEntry(
-      analysis,
-      'Automated documentation sync'
-    );
-    
-    return `# Development Log Entry\n\n${JSON.stringify(logEntry, null, 2)}`;
   }
 
   /**
