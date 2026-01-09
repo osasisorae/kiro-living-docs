@@ -79,9 +79,62 @@ export class AutoDocSyncSystem {
     // Initialize subagent integration if enabled
     if (this.config.subagent.enabled) {
       try {
+        // Ensure subagent config exists before creating integration
+        const configPath = this.config.subagent.configPath 
+          ? this.resolveWorkspacePath(this.config.subagent.configPath)
+          : undefined;
+        
+        if (!SubagentConfigManager.configExists(configPath)) {
+          // Initialize config synchronously to avoid async constructor issues
+          const fs = require('fs');
+          const path = require('path');
+          
+          const targetPath = configPath || SubagentConfigManager.getConfigPath(this.workspaceRoot);
+          const dir = path.dirname(targetPath);
+          
+          // Create directory if it doesn't exist
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+          
+          // Create default config if it doesn't exist
+          if (!fs.existsSync(targetPath)) {
+            // Use the same default config creation logic as SubagentConfigManager
+            const defaultConfig = {
+              name: "doc-analysis-agent",
+              version: "1.0.0",
+              description: "Specialized AI agent for code analysis and documentation generation in the Auto-Doc-Sync System",
+              capabilities: [
+                "code-analysis",
+                "ast-parsing", 
+                "diff-analysis",
+                "documentation-generation",
+                "template-processing",
+                "change-classification"
+              ],
+              configuration: {
+                model: "gpt-4",
+                temperature: 0.1,
+                maxTokens: 4000,
+                timeout: 30000
+              },
+              prompts: {
+                system: "You are a specialized documentation analysis agent for the Auto-Doc-Sync System. Your role is to analyze code changes and generate structured documentation requirements.",
+                codeAnalysis: "Analyze the following code changes and extract functions, classes, APIs, and types.",
+                changeClassification: "Classify the following code changes and identify new features, API modifications, and architectural changes.",
+                documentationGeneration: "Generate documentation content based on the provided analysis results.",
+                templateProcessing: "Process the following template with the provided variables."
+              }
+            };
+            
+            fs.writeFileSync(targetPath, JSON.stringify(defaultConfig, null, 2));
+          }
+        }
+        
         this.subagentIntegration = new SubagentIntegration(
           this.config.analysis,
-          this.config.subagent.configPath ? this.resolveWorkspacePath(this.config.subagent.configPath) : undefined
+          configPath,
+          this.workspaceRoot
         );
       } catch (error) {
         console.warn('Subagent integration failed to initialize, continuing without it:', error);
@@ -109,9 +162,23 @@ export class AutoDocSyncSystem {
       // Ensure required directories exist
       await this.ensureDirectories();
       
-      // Initialize subagent configuration if needed
-      if (this.config.subagent.enabled && !SubagentConfigManager.configExists()) {
-        await SubagentConfigManager.initialize();
+      // Initialize subagent configuration if needed (fallback for async initialization)
+      if (this.config.subagent.enabled && !this.subagentIntegration) {
+        try {
+          await SubagentConfigManager.initialize(this.workspaceRoot);
+          
+          const configPath = this.config.subagent.configPath 
+            ? this.resolveWorkspacePath(this.config.subagent.configPath)
+            : undefined;
+            
+          this.subagentIntegration = new SubagentIntegration(
+            this.config.analysis,
+            configPath,
+            this.workspaceRoot
+          );
+        } catch (error) {
+          console.warn('Subagent integration initialization failed during async setup:', error);
+        }
       }
       
       // Load hook configurations
