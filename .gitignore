@@ -4,3 +4,5 @@ dist/
 # Generated development logs and artifacts
 .kiro/development-log/*.md
 *.backup.*
+
+.env
