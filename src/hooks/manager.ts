@@ -197,11 +197,26 @@ export class HookManager {
         return;
       }
 
-      const [command, ...args] = hook.command.split(' ');
+      let command: string;
+      let args: string[];
+      let useShell = false;
+
+      // Handle both string and array command formats
+      if (Array.isArray(hook.command)) {
+        // Array format: ['command', 'arg1', 'arg2']
+        [command, ...args] = hook.command;
+      } else {
+        // String format: use shell to handle quoted arguments properly
+        command = hook.command;
+        args = [];
+        useShell = true;
+      }
+
       const options = {
         cwd: hook.workingDirectory || process.cwd(),
         env: { ...process.env, ...hook.environment },
-        timeout: hook.timeout
+        timeout: hook.timeout,
+        shell: useShell
       };
 
       let output = '';

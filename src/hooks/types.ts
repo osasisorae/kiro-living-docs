@@ -7,7 +7,7 @@ export interface HookConfig {
   trigger: 'git-commit' | 'manual';
   enabled: boolean;
   timeout: number;
-  command?: string;
+  command?: string | string[];
   workingDirectory?: string;
   environment?: Record<string, string>;
 }
@@ -58,7 +58,7 @@ export interface HookTemplate {
   name: string;
   description: string;
   trigger: 'git-commit' | 'manual';
-  command: string;
+  command: string | string[];
   workingDirectory: string;
   environment: Record<string, string>;
   timeout: number;
