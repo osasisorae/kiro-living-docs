@@ -104,27 +104,110 @@ export class OutputManager {
   }
 
   private updateFeaturesAPISection(originalContent: string, newContent: string, formatting: FormattingPreservation): string {
-    const lines = originalContent.split(/\r?\n/);
-    const sections = this.parseMarkdownSections(originalContent);
-    
-    // Find existing Features & API section
-    const existingSectionIndex = sections.findIndex(s => 
-      s.title.toLowerCase().includes('features') && s.title.toLowerCase().includes('api')
-    );
-    
-    if (existingSectionIndex === -1) {
-      // No existing section, append new one
+    const allSections = this.findHierarchicalSectionsByTitle(originalContent, (title) => {
+      const normalized = title.toLowerCase();
+      return normalized.includes('features') && normalized.includes('api');
+    });
+
+    if (allSections.length === 0) {
       return this.appendSection(originalContent, 'Features & API', newContent, formatting);
     }
-    
-    const existingSection = sections[existingSectionIndex];
-    const existingContent = this.extractSectionContent(originalContent, existingSection);
-    
-    // Parse existing and new content to deduplicate
-    const mergedContent = this.mergeFeatureAPIContent(existingContent, newContent);
-    
-    // Replace the existing section with merged content
-    return this.replaceSection(originalContent, existingSection, mergedContent, formatting);
+
+    const primarySection = allSections[0];
+    const duplicateSections = allSections.slice(1);
+
+    const existingCombinedContent = allSections
+      .map((section) => this.extractSectionContent(originalContent, section))
+      .join('\n');
+
+    const mergedContent = this.mergeFeatureAPIContent(existingCombinedContent, newContent);
+
+    if (duplicateSections.length === 0) {
+      return this.replaceSection(originalContent, primarySection, mergedContent, formatting);
+    }
+
+    return this.replaceAndRemoveSections(originalContent, primarySection, duplicateSections, mergedContent, formatting);
+  }
+
+  private findHierarchicalSectionsByTitle(
+    content: string,
+    titleMatches: (title: string) => boolean
+  ): MarkdownSection[] {
+    const lines = content.split(/\r?\n/);
+    const headers: Array<{ lineIndex: number; level: number; title: string }> = [];
+
+    for (let index = 0; index < lines.length; index++) {
+      const match = lines[index].match(/^(#{1,6})\s+(.+)$/);
+      if (!match) {
+        continue;
+      }
+      headers.push({ lineIndex: index, level: match[1].length, title: match[2] });
+    }
+
+    const sections: MarkdownSection[] = [];
+
+    for (let index = 0; index < headers.length; index++) {
+      const header = headers[index];
+      if (!titleMatches(header.title)) {
+        continue;
+      }
+
+      let endLine = lines.length - 1;
+      for (let nextIndex = index + 1; nextIndex < headers.length; nextIndex++) {
+        const nextHeader = headers[nextIndex];
+        if (nextHeader.level <= header.level) {
+          endLine = nextHeader.lineIndex - 1;
+          break;
+        }
+      }
+
+      sections.push({
+        title: header.title,
+        content: '',
+        level: header.level,
+        startLine: header.lineIndex,
+        endLine,
+      });
+    }
+
+    return sections.sort((a, b) => a.startLine - b.startLine);
+  }
+
+  private replaceAndRemoveSections(
+    originalContent: string,
+    primarySection: MarkdownSection,
+    sectionsToRemove: MarkdownSection[],
+    newContent: string,
+    formatting: FormattingPreservation
+  ): string {
+    const lines = originalContent.split(/\r?\n/);
+    const rangesToRemove = sectionsToRemove
+      .map((s) => ({ start: s.startLine, end: s.endLine }))
+      .sort((a, b) => a.start - b.start);
+
+    const newLines: string[] = [];
+    let removeIndex = 0;
+    let currentRemove = rangesToRemove[removeIndex];
+
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      if (lineIndex === primarySection.startLine) {
+        const sectionHeader = `${'#'.repeat(primarySection.level)} ${primarySection.title}`;
+        newLines.push(sectionHeader, '', ...newContent.split(/\r?\n/));
+        lineIndex = primarySection.endLine;
+        continue;
+      }
+
+      if (currentRemove && lineIndex === currentRemove.start) {
+        lineIndex = currentRemove.end;
+        removeIndex++;
+        currentRemove = rangesToRemove[removeIndex];
+        continue;
+      }
+
+      newLines.push(lines[lineIndex]);
+    }
+
+    return newLines.join(formatting.lineEndings);
   }
 
   private mergeFeatureAPIContent(existingContent: string, newContent: string): string {
@@ -299,7 +382,7 @@ export class OutputManager {
     for (let index = 0; index < lines.length; index++) {
       const line = lines[index];
       const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
-      
+
       if (headerMatch) {
         // Close previous section
         if (currentSection) {
@@ -313,7 +396,7 @@ export class OutputManager {
           content: '',
           level: headerMatch[1].length,
           startLine: index,
-          endLine: index
+          endLine: index,
         };
       } else if (currentSection) {
         currentSection.content += line + '\n';
