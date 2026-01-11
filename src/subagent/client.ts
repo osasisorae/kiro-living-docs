@@ -113,14 +113,16 @@ export class SubagentClient {
     this.config = this.loadConfig(configPath);
     this.context = context;
     
-    // Initialize OpenAI client
+    // Initialize OpenAI client only if API key is available
     if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
+      console.warn('OPENAI_API_KEY environment variable not found. Subagent will operate in fallback mode.');
+      // Don't throw error, just set openai to null and handle gracefully
+      this.openai = null as any;
+    } else {
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
     }
-    
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
   }
 
   /**
@@ -216,6 +218,19 @@ export class SubagentClient {
    */
   private async sendRequest(request: SubagentRequest): Promise<SubagentResponse> {
     const startTime = Date.now();
+    
+    // Check if OpenAI client is available
+    if (!this.openai) {
+      return {
+        success: false,
+        error: 'OpenAI client not available. Please set OPENAI_API_KEY environment variable.',
+        metadata: {
+          processingTime: Date.now() - startTime,
+          tokensUsed: 0,
+          model: 'none'
+        }
+      };
+    }
     
     try {
       // Load system prompt from file (with fallback to config)

@@ -40,6 +40,12 @@ export class SubagentIntegration {
       // First, perform local analysis
       const localAnalysis = await this.analyzer.analyze(changes);
 
+      // Check if OpenAI client is available before attempting subagent enhancement
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('OPENAI_API_KEY not available, skipping subagent enhancement');
+        return localAnalysis;
+      }
+
       // Extract Kiro context for subagent
       const kiroContext = await this.analyzer.extractKiroContext();
       this.subagentClient.updateContext({ kiroContext });
@@ -109,6 +115,12 @@ export class SubagentIntegration {
     existingContent?: string
   ): Promise<string> {
     try {
+      // Check if OpenAI client is available
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('OPENAI_API_KEY not available, using fallback documentation generation');
+        return this.generateFallbackDocumentation(analysisResults, templateType);
+      }
+
       const response = await this.subagentClient.generateDocumentation({
         analysisResults,
         templateType,
@@ -133,6 +145,12 @@ export class SubagentIntegration {
     templateType: string
   ): Promise<string> {
     try {
+      // Check if OpenAI client is available
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('OPENAI_API_KEY not available, using fallback template processing');
+        return this.processTemplateFallback(template, variables);
+      }
+
       const response = await this.subagentClient.processTemplate({
         template,
         variables,
@@ -218,13 +236,16 @@ export class SubagentIntegration {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      // Test basic subagent functionality
-      await this.subagentClient.analyzeCode({
-        changes: ['// test'],
-        filePaths: ['test.ts'],
-        diffContent: '// test change'
-      });
+      // Only check if the client is properly configured, don't make API calls
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('Subagent health check: OPENAI_API_KEY not configured');
+        return false;
+      }
 
+      // Validate configuration without making API calls
+      this.subagentClient.validateConfig();
+      
+      console.log('Subagent health check: Configuration valid');
       return true;
     } catch (error) {
       console.warn('Subagent health check failed:', error);
