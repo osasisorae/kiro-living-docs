@@ -3,13 +3,15 @@
  */
 
 import { promises as fs } from 'fs';
-import { execSync } from 'child_process';
 import { join } from 'path';
+import { execSync } from 'child_process';
 import { LogEntry, LogSession, LogConfig } from './types';
 import { ChangeAnalysis } from '../types/index';
 
 export class DevelopmentLogger {
   private config: LogConfig;
+  private currentSession: LogSession | null = null;
+  private activeSessions: Map<string, LogSession> = new Map();
   private gitContextCache: {
     branch?: string;
     commitHash?: string;
@@ -54,6 +56,24 @@ export class DevelopmentLogger {
     };
 
     return entry;
+  }
+
+
+  /**
+   * Gets the current session
+   */
+  getCurrentSession(): LogSession | null {
+    return this.currentSession;
+  }
+
+  /**
+   * Sets the current session
+   */
+  setCurrentSession(session: LogSession | null): void {
+    this.currentSession = session;
+    if (session) {
+      this.activeSessions.set(session.sessionId, session);
+    }
   }
 
   /**
@@ -228,6 +248,7 @@ export class DevelopmentLogger {
       return false;
     }
   }
+
 
   /**
    * Retrieves the current Git branch name
