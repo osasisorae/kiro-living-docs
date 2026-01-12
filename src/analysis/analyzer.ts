@@ -334,34 +334,48 @@ export class CodeAnalyzer {
   private extractFunctions(code: string): FunctionDefinition[] {
     const functions: FunctionDefinition[] = [];
     
-    // Regex patterns for different function types
-    const patterns = [
-      // function declarations: function name() {}
-      /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)/g,
-      // arrow functions: const name = () => {}
-      /(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/g,
-      // method definitions: methodName() {}
-      /(\w+)\s*\([^)]*\)\s*\{/g
-    ];
-
-    for (const pattern of patterns) {
-      let match;
-      while ((match = pattern.exec(code)) !== null) {
-        const name = match[1];
-        const params = match[2] || '';
-        const isExported = match[0].includes('export');
-        
-        // Skip if already found (avoid duplicates)
-        if (functions.some(f => f.name === name)) continue;
-        
-        functions.push({
-          name,
-          parameters: this.parseParameters(params),
-          returnType: 'any',
-          isExported,
-          documentation: this.extractDocumentationForFunction(code, name)
-        });
-      }
+    // JavaScript/TypeScript reserved keywords that should not be treated as function names
+    const reservedKeywords = new Set([
+      'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue',
+      'return', 'throw', 'try', 'catch', 'finally', 'new', 'delete', 'typeof',
+      'instanceof', 'void', 'this', 'super', 'class', 'extends', 'import', 'export',
+      'default', 'from', 'as', 'async', 'await', 'yield', 'let', 'const', 'var',
+      'function', 'get', 'set', 'static', 'public', 'private', 'protected',
+      'implements', 'interface', 'type', 'enum', 'namespace', 'module', 'declare',
+      'abstract', 'readonly', 'override', 'in', 'of', 'with', 'debugger'
+    ]);
+    
+    // Pattern for function declarations: function name() {}
+    const functionDeclRegex = /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)(?:\s*:\s*([^{]+))?\s*\{/g;
+    let match;
+    while ((match = functionDeclRegex.exec(code)) !== null) {
+      const name = match[1];
+      if (reservedKeywords.has(name)) continue;
+      if (functions.some(f => f.name === name)) continue;
+      
+      functions.push({
+        name,
+        parameters: this.parseParameters(match[2] || ''),
+        returnType: match[3]?.trim() || 'any',
+        isExported: match[0].includes('export'),
+        documentation: this.extractDocumentationForFunction(code, name)
+      });
+    }
+    
+    // Pattern for arrow functions: const name = () => {} or const name = async () => {}
+    const arrowFuncRegex = /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)(?:\s*:\s*([^=]+))?\s*=>/g;
+    while ((match = arrowFuncRegex.exec(code)) !== null) {
+      const name = match[1];
+      if (reservedKeywords.has(name)) continue;
+      if (functions.some(f => f.name === name)) continue;
+      
+      functions.push({
+        name,
+        parameters: this.parseParameters(match[2] || ''),
+        returnType: match[3]?.trim() || 'any',
+        isExported: match[0].includes('export'),
+        documentation: this.extractDocumentationForFunction(code, name)
+      });
     }
 
     return functions;
@@ -400,21 +414,34 @@ export class CodeAnalyzer {
    */
   private extractMethodsFromClassBody(classBody: string): FunctionDefinition[] {
     const methods: FunctionDefinition[] = [];
-    const methodRegex = /(\w+)\s*\(([^)]*)\)\s*\{/g;
+    
+    // Reserved keywords that should not be treated as method names
+    const reservedKeywords = new Set([
+      'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue',
+      'return', 'throw', 'try', 'catch', 'finally', 'new', 'delete', 'typeof',
+      'instanceof', 'void', 'this', 'super', 'class', 'extends', 'import', 'export',
+      'default', 'from', 'as', 'async', 'await', 'yield', 'let', 'const', 'var',
+      'function', 'constructor', 'get', 'set', 'static', 'public', 'private', 'protected'
+    ]);
+    
+    // Pattern for method definitions: methodName() {} or async methodName() {}
+    // Must start with a valid identifier character (letter, underscore, or $)
+    const methodRegex = /(?:async\s+)?(?:public\s+|private\s+|protected\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)(?:\s*:\s*([^{]+))?\s*\{/g;
     
     let match;
     while ((match = methodRegex.exec(classBody)) !== null) {
       const methodName = match[1];
-      const params = match[2];
       
-      // Skip constructor
-      if (methodName === 'constructor') continue;
+      // Skip reserved keywords and constructor
+      if (reservedKeywords.has(methodName)) continue;
+      // Skip if already found
+      if (methods.some(m => m.name === methodName)) continue;
       
       methods.push({
         name: methodName,
-        parameters: this.parseParameters(params),
-        returnType: 'any',
-        isExported: false, // Methods are part of classes
+        parameters: this.parseParameters(match[2] || ''),
+        returnType: match[3]?.trim() || 'any',
+        isExported: false,
         documentation: undefined
       });
     }

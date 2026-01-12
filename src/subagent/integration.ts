@@ -79,24 +79,105 @@ export class SubagentIntegration {
         previousAnalysis: localAnalysis
       });
 
-      // Merge local and subagent results
+      // Convert AI extracted functions/classes to API definitions
+      const aiAPIs: any[] = [];
+      
+      // Convert extracted functions to APIs
+      if (codeAnalysisResponse.extractedFunctions) {
+        for (const func of codeAnalysisResponse.extractedFunctions) {
+          aiAPIs.push({
+            name: func.name,
+            method: 'function',
+            parameters: func.parameters || [],
+            returnType: func.returnType || 'any',
+            description: func.description || `${func.name} function`
+          });
+        }
+      }
+      
+      // Convert extracted classes to APIs (class methods)
+      if (codeAnalysisResponse.extractedClasses) {
+        for (const cls of codeAnalysisResponse.extractedClasses) {
+          // Add class itself as a feature
+          if (cls.methods && cls.methods.length > 0) {
+            for (const method of cls.methods) {
+              // Parse method signature if it's a string
+              const methodName = typeof method === 'string' 
+                ? method.split('(')[0].trim()
+                : method.name;
+              
+              if (methodName && !methodName.includes('constructor')) {
+                aiAPIs.push({
+                  name: `${cls.name}.${methodName}`,
+                  method: 'method',
+                  parameters: [],
+                  returnType: 'any',
+                  description: `${cls.name} method: ${methodName}`
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      // Also include any explicit extractedAPIs from AI
+      if (codeAnalysisResponse.extractedAPIs) {
+        aiAPIs.push(...codeAnalysisResponse.extractedAPIs);
+      }
+
+      // Convert extracted classes to features
+      const aiFeatures: any[] = classificationResponse.newFeatures || [];
+      if (codeAnalysisResponse.extractedClasses) {
+        for (const cls of codeAnalysisResponse.extractedClasses) {
+          aiFeatures.push({
+            name: cls.name,
+            description: cls.description || `${cls.name} class`,
+            affectedFiles: localAnalysis.changedFiles.map(f => f.path),
+            category: 'enhanced'
+          });
+        }
+      }
+
+      const aiArchChanges = classificationResponse.architecturalChanges || [];
+      const aiDocReqs = classificationResponse.documentationRequirements || [];
+
+      // Filter local data to remove garbage (keywords parsed as functions)
+      const localAPIs = localAnalysis.extractedAPIs.filter(localApi => 
+        !localApi.description?.includes('takes (any)') &&
+        !localApi.name.includes('.if') &&
+        !localApi.name.includes('.for') &&
+        !localApi.name.includes('.catch') &&
+        !localApi.name.includes('.while')
+      );
+
+      const localFeatures = localAnalysis.newFeatures.filter(localFeature =>
+        !localFeature.description?.includes('with 0 methods') &&
+        localFeature.description?.length > 15
+      );
+
+      // Deduplicate by name
+      const seenAPIs = new Set<string>();
+      const uniqueAPIs = [...aiAPIs, ...localAPIs].filter(api => {
+        if (seenAPIs.has(api.name)) return false;
+        seenAPIs.add(api.name);
+        return true;
+      });
+
+      const seenFeatures = new Set<string>();
+      const uniqueFeatures = [...aiFeatures, ...localFeatures].filter(f => {
+        if (seenFeatures.has(f.name)) return false;
+        seenFeatures.add(f.name);
+        return true;
+      });
+
       return {
         ...localAnalysis,
-        extractedAPIs: [
-          ...localAnalysis.extractedAPIs,
-          ...codeAnalysisResponse.extractedAPIs
-        ],
-        newFeatures: [
-          ...localAnalysis.newFeatures,
-          ...classificationResponse.newFeatures
-        ],
-        architecturalChanges: [
-          ...localAnalysis.architecturalChanges,
-          ...classificationResponse.architecturalChanges
-        ],
+        extractedAPIs: uniqueAPIs,
+        newFeatures: uniqueFeatures,
+        architecturalChanges: [...aiArchChanges, ...localAnalysis.architecturalChanges],
         documentationRequirements: [
-          ...localAnalysis.documentationRequirements,
-          ...classificationResponse.documentationRequirements
+          ...aiDocReqs,
+          ...localAnalysis.documentationRequirements
         ]
       };
     } catch (error) {

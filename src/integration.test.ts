@@ -695,6 +695,13 @@ export class FeatureService {
 
       // Run system - should recreate directory structure
       const system = new AutoDocSyncSystem(undefined, testWorkspace);
+      
+      // Disable subagent for faster test
+      (system as any).config = {
+        ...(system as any).config,
+        subagent: { enabled: false }
+      };
+      
       await system.initialize();
       
       await system.run({
@@ -778,10 +785,10 @@ export const INVALID = "unclosed string;
       await fs.mkdir(path.dirname(sourceFile), { recursive: true });
       await fs.writeFile(sourceFile, 'export const CONFIG_ERROR = true;');
 
-      // Run system - should use default config (but we need to disable subagent for test speed)
+      // Run system - should use default config
       const system = new AutoDocSyncSystem(configFile, testWorkspace);
       
-      // Override config to disable subagent for faster test
+      // Disable subagent for faster test (must be done before initialize)
       (system as any).config = {
         ...(system as any).config,
         subagent: { enabled: false }
@@ -850,6 +857,12 @@ export const INVALID = "unclosed string;
       const invalidConfigPath = '/invalid/path/config.json';
       
       const system = new AutoDocSyncSystem(invalidConfigPath, testWorkspace);
+      
+      // Disable subagent for faster test
+      (system as any).config = {
+        ...(system as any).config,
+        subagent: { enabled: false }
+      };
       
       // Should handle initialization gracefully
       await expect(system.initialize()).resolves.not.toThrow();

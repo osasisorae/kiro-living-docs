@@ -3,14 +3,24 @@
  */
 
 import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
-import { LogEntry, LogSession, LogConfig, LogMetadata } from './types';
+import { execSync } from 'child_process';
+import { join } from 'path';
+import { LogEntry, LogSession, LogConfig } from './types';
 import { ChangeAnalysis } from '../types/index';
 
 export class DevelopmentLogger {
   private config: LogConfig;
-  private currentSession: LogSession | null = null;
-  private activeSessions: Map<string, LogSession> = new Map();
+  private gitContextCache: {
+    branch?: string;
+    commitHash?: string;
+    author?: string;
+    commitMessage?: string;
+    stagedFiles?: string[];
+    modifiedFiles?: string[];
+    isGitRepo?: boolean;
+    cacheTime: number;
+  } = { cacheTime: 0 };
+  private readonly CACHE_TTL = 5000; // 5 seconds cache
 
   constructor(config: LogConfig) {
     this.config = config;
@@ -189,11 +199,11 @@ export class DevelopmentLogger {
   }
 
   private generateEntryId(): string {
-    return `entry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `entry-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private generateSessionId(): string {
-    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private generateLogFileName(timestamp: string): string {
@@ -219,15 +229,139 @@ export class DevelopmentLogger {
     }
   }
 
+  /**
+   * Retrieves the current Git branch name
+   */
+  getBranch(): string | undefined {
+    this.refreshGitCache();
+    return this.gitContextCache.branch;
+  }
+
+  /**
+   * Retrieves the latest commit message
+   */
+  getLatestCommitMessage(): string | undefined {
+    this.refreshGitCache();
+    return this.gitContextCache.commitMessage;
+  }
+
+  /**
+   * Retrieves a list of staged files
+   */
+  getStagedFiles(): string[] {
+    this.refreshGitCache();
+    return this.gitContextCache.stagedFiles || [];
+  }
+
+  /**
+   * Retrieves a list of modified but unstaged files
+   */
+  getModifiedFiles(): string[] {
+    this.refreshGitCache();
+    return this.gitContextCache.modifiedFiles || [];
+  }
+
+  /**
+   * Checks if the current directory is within a Git repository
+   */
+  isGitRepository(): boolean {
+    this.refreshGitCache();
+    return this.gitContextCache.isGitRepo || false;
+  }
+
   private extractCommitHash(): string | undefined {
-    // This would typically extract from git context
-    // For now, return undefined as placeholder
-    return undefined;
+    this.refreshGitCache();
+    return this.gitContextCache.commitHash;
   }
 
   private extractAuthor(): string | undefined {
-    // This would typically extract from git context
-    // For now, return undefined as placeholder
-    return undefined;
+    this.refreshGitCache();
+    return this.gitContextCache.author;
+  }
+
+  private refreshGitCache(): void {
+    const now = Date.now();
+    if (now - this.gitContextCache.cacheTime < this.CACHE_TTL) {
+      return; // Cache is still valid
+    }
+
+    // Check if we're in a git repo first
+    try {
+      execSync('git rev-parse --is-inside-work-tree', { 
+        timeout: 5000, 
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      });
+      this.gitContextCache.isGitRepo = true;
+    } catch {
+      this.gitContextCache.isGitRepo = false;
+      this.gitContextCache.cacheTime = now;
+      return;
+    }
+
+    // Extract all git context
+    try {
+      this.gitContextCache.branch = execSync('git rev-parse --abbrev-ref HEAD', {
+        timeout: 5000,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      }).trim();
+    } catch {
+      this.gitContextCache.branch = undefined;
+    }
+
+    try {
+      this.gitContextCache.commitHash = execSync('git rev-parse --short HEAD', {
+        timeout: 5000,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      }).trim();
+    } catch {
+      this.gitContextCache.commitHash = undefined;
+    }
+
+    try {
+      this.gitContextCache.author = execSync('git config user.name', {
+        timeout: 5000,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      }).trim();
+    } catch {
+      this.gitContextCache.author = undefined;
+    }
+
+    try {
+      this.gitContextCache.commitMessage = execSync('git log -1 --pretty=%B', {
+        timeout: 5000,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      }).trim();
+    } catch {
+      this.gitContextCache.commitMessage = undefined;
+    }
+
+    try {
+      const staged = execSync('git diff --cached --name-only', {
+        timeout: 5000,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      }).trim();
+      this.gitContextCache.stagedFiles = staged ? staged.split('\n').filter(f => f) : [];
+    } catch {
+      this.gitContextCache.stagedFiles = [];
+    }
+
+    try {
+      const modified = execSync('git diff --name-only', {
+        timeout: 5000,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+      }).trim();
+      this.gitContextCache.modifiedFiles = modified ? modified.split('\n').filter(f => f) : [];
+    } catch {
+      this.gitContextCache.modifiedFiles = [];
+    }
+
+    this.gitContextCache.cacheTime = now;
   }
 }
