@@ -229,8 +229,34 @@ export class AutoDocSyncSystem {
       // Step 2: Perform analysis (with subagent enhancement if available)
       const analysis = await this.performAnalysis(changes);
       
-      // Step 3: Generate documentation requirements
-      const requirements = analysis.documentationRequirements;
+      // Step 3: Generate documentation requirements from enhanced analysis
+      // Override local analyzer's requirements with ones based on actual content
+      let requirements = analysis.documentationRequirements;
+      
+      // If we have APIs or features but no requirements, generate them
+      if (requirements.length === 0 && (analysis.extractedAPIs.length > 0 || analysis.newFeatures.length > 0)) {
+        requirements = [];
+        
+        if (analysis.extractedAPIs.length > 0) {
+          requirements.push({
+            type: 'api-spec' as const,
+            targetFile: this.resolveWorkspacePath('.kiro/specs/api.md'),
+            content: '', // Will be generated in processDocumentationRequirements
+            priority: 'high' as const
+          });
+        }
+        
+        if (analysis.newFeatures.length > 0 || analysis.extractedAPIs.length > 0) {
+          requirements.push({
+            type: 'readme-section' as const,
+            targetFile: this.resolveWorkspacePath('README.md'),
+            section: 'Features & API',
+            content: '', // Will be generated in processDocumentationRequirements
+            priority: 'medium' as const
+          });
+        }
+      }
+      
       if (requirements.length === 0) {
         console.log('No documentation updates required');
         // Still create a log entry for tracking purposes
@@ -351,59 +377,100 @@ export class AutoDocSyncSystem {
    * Generate API documentation using templates
    */
   private async generateAPIDocumentation(analysis: ChangeAnalysis): Promise<string> {
-    const context = {
-      variables: {
-        apis: analysis.extractedAPIs,
-        description: 'API documentation generated from code analysis',
-        title: 'API Documentation'
-      },
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        version: '1.0.0',
-        source: 'Auto-Doc-Sync System'
-      }
-    };
-    
-    if (this.subagentIntegration) {
-      try {
-        return await this.subagentIntegration.generateDocumentation(
-          analysis,
-          'api-doc',
-          this.resolveWorkspacePath('.kiro/specs/api.md')
-        );
-      } catch (error) {
-        console.warn('Subagent documentation generation failed, using template engine:', error);
+    // Build comprehensive API documentation from analysis
+    let content = `# API Documentation\n\n`;
+    content += `Generated: ${new Date().toISOString()}\n\n`;
+
+    // Document extracted APIs
+    if (analysis.extractedAPIs.length > 0) {
+      content += `## API Endpoints\n\n`;
+      for (const api of analysis.extractedAPIs) {
+        content += `### ${api.name}\n\n`;
+        if (api.description) {
+          content += `${api.description}\n\n`;
+        }
+        if (api.method) {
+          content += `**Method:** \`${api.method}\`\n`;
+        }
+        if (api.path) {
+          content += `**Path:** \`${api.path}\`\n`;
+        }
+        if (api.parameters && api.parameters.length > 0) {
+          content += `\n**Parameters:**\n`;
+          for (const param of api.parameters) {
+            content += `- \`${param.name}\` (${param.type})${param.description ? ` - ${param.description}` : ''}\n`;
+          }
+        }
+        if (api.returnType) {
+          content += `\n**Returns:** \`${api.returnType}\`\n`;
+        }
+        content += '\n';
       }
     }
-    
-    return await this.templateEngine.render('api-doc', context);
+
+    // Document new features
+    if (analysis.newFeatures.length > 0) {
+      content += `## New Features\n\n`;
+      for (const feature of analysis.newFeatures) {
+        content += `### ${feature.name}\n\n`;
+        content += `${feature.description}\n\n`;
+        if (feature.category) {
+          content += `**Category:** ${feature.category}\n`;
+        }
+        if (feature.affectedFiles && feature.affectedFiles.length > 0) {
+          content += `**Affected Files:** ${feature.affectedFiles.join(', ')}\n`;
+        }
+        content += '\n';
+      }
+    }
+
+    // Document architectural changes
+    if (analysis.architecturalChanges.length > 0) {
+      content += `## Architectural Changes\n\n`;
+      for (const change of analysis.architecturalChanges) {
+        content += `### ${change.component}\n\n`;
+        content += `**Type:** ${change.type}\n`;
+        content += `**Impact:** ${change.impact}\n\n`;
+        content += `${change.description}\n\n`;
+      }
+    }
+
+    // Document changed files
+    if (analysis.changedFiles.length > 0) {
+      content += `## Changed Files\n\n`;
+      for (const file of analysis.changedFiles) {
+        content += `- \`${file.path}\``;
+        if (file.changeType) {
+          content += ` (${file.changeType})`;
+        }
+        content += '\n';
+      }
+      content += '\n';
+    }
+
+    return content;
   }
 
   /**
    * Generate README update content
    */
   private async generateREADMEUpdate(analysis: ChangeAnalysis): Promise<string> {
-    // Generate meaningful content based on actual analysis
     let content = '';
     
-    // Only add sections if we have meaningful content
+    // Filter for meaningful features (not generic placeholders)
     const meaningfulFeatures = analysis.newFeatures.filter(f => 
       f.name && f.description && 
-      !f.description.toLowerCase().includes('enhanced functionality') &&
-      !f.description.toLowerCase().includes('updated') &&
-      !f.description.toLowerCase().includes('with 0 methods') &&
-      f.description.length > 20
+      f.description.length > 10 &&
+      !f.description.toLowerCase().includes('with 0 methods')
     );
     
+    // Filter for meaningful APIs
     const meaningfulAPIs = analysis.extractedAPIs.filter(api => 
-      api.name && api.description && 
-      !api.description.toLowerCase().includes('api endpoint') &&
-      !api.description.toLowerCase().includes('updated') &&
-      !api.description.toLowerCase().includes('with 0 methods') &&
-      api.description.length > 10
+      api.name && 
+      (api.description || api.parameters?.length || api.returnType)
     );
     
-    // Generate features content without nested headers
+    // Generate features content
     if (meaningfulFeatures.length > 0) {
       content += '**Features:**\n\n';
       for (const feature of meaningfulFeatures) {
@@ -412,22 +479,18 @@ export class AutoDocSyncSystem {
       content += '\n';
     }
     
-    // Generate API content without nested headers
+    // Generate API content
     if (meaningfulAPIs.length > 0) {
       content += '**API:**\n\n';
       for (const api of meaningfulAPIs) {
         const params = api.parameters && api.parameters.length > 0 
-          ? `(${api.parameters.map(p => `${p.name}: ${p.type}`).join(', ')})` 
+          ? `(${api.parameters.map(p => p.type || p.name).join(', ')})` 
           : '()';
         const returnType = api.returnType && api.returnType !== 'void' ? ` → ${api.returnType}` : '';
-        content += `- **${api.name}${params}**${returnType}: ${api.description}\n`;
+        const desc = api.description || `${api.name} function`;
+        content += `- **${api.name}**${params}${returnType}: ${desc}\n`;
       }
       content += '\n';
-    }
-    
-    // If no meaningful content, return empty string to avoid updating
-    if (!content.trim()) {
-      return '';
     }
     
     return content.trim();

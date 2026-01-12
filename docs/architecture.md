@@ -1,0 +1,1 @@
+Document the removal of the 'test-comprehensive-ai' component, including its purpose and the impact of its removal on the system.
