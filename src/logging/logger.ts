@@ -4,6 +4,7 @@
 
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
+import { execSync } from 'child_process';
 import { LogEntry, LogSession, LogConfig, LogMetadata } from './types';
 import { ChangeAnalysis } from '../types/index';
 
@@ -11,6 +12,8 @@ export class DevelopmentLogger {
   private config: LogConfig;
   private currentSession: LogSession | null = null;
   private activeSessions: Map<string, LogSession> = new Map();
+  private gitContextCache: { commitHash?: string; author?: string; branch?: string; timestamp?: number } = {};
+  private readonly GIT_CACHE_TTL = 5000; // 5 seconds cache
 
   constructor(config: LogConfig) {
     this.config = config;
@@ -220,14 +223,88 @@ export class DevelopmentLogger {
   }
 
   private extractCommitHash(): string | undefined {
-    // This would typically extract from git context
-    // For now, return undefined as placeholder
-    return undefined;
+    return this.getGitContext().commitHash;
   }
 
   private extractAuthor(): string | undefined {
-    // This would typically extract from git context
-    // For now, return undefined as placeholder
-    return undefined;
+    return this.getGitContext().author;
+  }
+
+  /**
+   * Get git context with caching to avoid repeated git calls
+   */
+  private getGitContext(): { commitHash?: string; author?: string; branch?: string } {
+    const now = Date.now();
+    
+    // Return cached values if still valid
+    if (this.gitContextCache.timestamp && (now - this.gitContextCache.timestamp) < this.GIT_CACHE_TTL) {
+      return this.gitContextCache;
+    }
+
+    // Refresh git context
+    this.gitContextCache = {
+      commitHash: this.executeGitCommand('git rev-parse --short HEAD'),
+      author: this.executeGitCommand('git config user.name'),
+      branch: this.executeGitCommand('git rev-parse --abbrev-ref HEAD'),
+      timestamp: now
+    };
+
+    return this.gitContextCache;
+  }
+
+  /**
+   * Execute a git command and return the result
+   */
+  private executeGitCommand(command: string): string | undefined {
+    try {
+      const result = execSync(command, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 5000
+      });
+      return result.trim() || undefined;
+    } catch (error) {
+      // Git command failed (not a git repo, git not installed, etc.)
+      return undefined;
+    }
+  }
+
+  /**
+   * Get the current git branch name
+   */
+  getBranch(): string | undefined {
+    return this.getGitContext().branch;
+  }
+
+  /**
+   * Get the latest commit message
+   */
+  getLatestCommitMessage(): string | undefined {
+    return this.executeGitCommand('git log -1 --pretty=%B');
+  }
+
+  /**
+   * Get list of staged files
+   */
+  getStagedFiles(): string[] {
+    const result = this.executeGitCommand('git diff --cached --name-only');
+    if (!result) return [];
+    return result.split('\n').filter(f => f.length > 0);
+  }
+
+  /**
+   * Get list of modified files (unstaged)
+   */
+  getModifiedFiles(): string[] {
+    const result = this.executeGitCommand('git diff --name-only');
+    if (!result) return [];
+    return result.split('\n').filter(f => f.length > 0);
+  }
+
+  /**
+   * Check if we're in a git repository
+   */
+  isGitRepository(): boolean {
+    return this.executeGitCommand('git rev-parse --is-inside-work-tree') === 'true';
   }
 }
