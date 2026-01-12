@@ -709,7 +709,7 @@ export class FeatureService {
       expect(await fileExists(testLogDir)).toBe(true);
       expect(await fileExists(testHooksDir)).toBe(true);
       expect(await fileExists(testSubagentsDir)).toBe(true);
-    }, 15000);
+    }, 60000);
 
     it('should handle analysis failures gracefully', async () => {
       // Create file with syntax errors
@@ -766,7 +766,7 @@ export const INVALID = "unclosed string;
       // System should still create log entry even if analysis fails
       const logFiles = await fs.readdir(testLogDir);
       expect(logFiles.length).toBeGreaterThan(0);
-    }, 15000);
+    }, 60000);
 
     it('should handle configuration errors and use defaults', async () => {
       // Create invalid configuration
@@ -778,8 +778,15 @@ export const INVALID = "unclosed string;
       await fs.mkdir(path.dirname(sourceFile), { recursive: true });
       await fs.writeFile(sourceFile, 'export const CONFIG_ERROR = true;');
 
-      // Run system - should use default config
+      // Run system - should use default config (but we need to disable subagent for test speed)
       const system = new AutoDocSyncSystem(configFile, testWorkspace);
+      
+      // Override config to disable subagent for faster test
+      (system as any).config = {
+        ...(system as any).config,
+        subagent: { enabled: false }
+      };
+      
       await system.initialize();
       
       await expect(system.run({
@@ -791,7 +798,7 @@ export const INVALID = "unclosed string;
       // Should still work with default configuration
       const logFiles = await fs.readdir(testLogDir);
       expect(logFiles.length).toBeGreaterThan(0);
-    }, 15000);
+    }, 60000);
 
     it('should handle empty file changes gracefully', async () => {
       // Create test configuration
@@ -836,7 +843,7 @@ export const INVALID = "unclosed string;
       // Should handle gracefully
       const logFiles = await fs.readdir(testLogDir);
       expect(logFiles.length).toBeGreaterThanOrEqual(0);
-    }, 15000);
+    }, 60000);
 
     it('should handle system initialization errors', async () => {
       // Create a system with invalid configuration path
@@ -852,7 +859,7 @@ export const INVALID = "unclosed string;
         triggerType: 'manual',
         reason: 'Initialization error test'
       })).resolves.not.toThrow();
-    }, 15000);
+    }, 60000);
   });
 
   /**

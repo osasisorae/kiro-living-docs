@@ -1,0 +1,1 @@
+Update the testing configuration section to include new timeout settings for testTimeout and hookTimeout in vitest.config.ts.
