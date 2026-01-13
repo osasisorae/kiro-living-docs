@@ -12,6 +12,7 @@ import { DevelopmentLogger } from './logging/logger';
 import { SubagentIntegration } from './subagent/integration';
 import { SubagentConfigManager } from './subagent/config-manager';
 import { ConfigManager } from './config';
+import { UsageTracker, UsageConfig, DEFAULT_USAGE_CONFIG } from './usage';
 import { ChangeAnalysis, DocumentationRequirement } from './types';
 import { AnalysisConfig } from './analysis/types';
 import { OutputConfig } from './output/types';
@@ -27,6 +28,7 @@ export interface SystemConfig {
     retentionDays: number;
     groupingTimeWindow: number;
   };
+  usage: UsageConfig;
   subagent: {
     enabled: boolean;
     configPath?: string;
@@ -52,6 +54,7 @@ export class AutoDocSyncSystem {
   private outputManager: OutputManager;
   private hookManager: HookManager;
   private logger: DevelopmentLogger;
+  private usageTracker: UsageTracker;
   private subagentIntegration?: SubagentIntegration;
   private initialized = false;
 
@@ -74,6 +77,12 @@ export class AutoDocSyncSystem {
     this.logger = new DevelopmentLogger({
       ...this.config.logging,
       logDirectory: this.resolveWorkspacePath(this.config.logging.logDirectory)
+    });
+    
+    // Initialize usage tracker
+    this.usageTracker = new UsageTracker({
+      ...this.config.usage,
+      dataDirectory: this.resolveWorkspacePath(this.config.usage.dataDirectory)
     });
     
     // Initialize subagent integration if enabled
@@ -205,11 +214,19 @@ export class AutoDocSyncSystem {
     }
 
     const startTime = Date.now();
+    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+    
     console.log(`Starting Auto-Doc-Sync System (trigger: ${options.triggerType})`);
+
+    // Start usage tracking
+    await this.usageTracker.startSession(sessionId);
 
     try {
       // Step 1: Analyze code changes
+      const analysisOpId = this.usageTracker.startOperation('analysis');
       const changes = await this.detectChanges(options);
+      this.usageTracker.endOperation(analysisOpId, 'analysis');
+      
       if (changes.length === 0) {
         console.log('No changes detected, skipping documentation sync');
         // Still create a log entry for tracking purposes
@@ -223,11 +240,22 @@ export class AutoDocSyncSystem {
           documentationRequirements: []
         };
         await this.createLogEntry(emptyAnalysis, options);
+        await this.endSessionWithSummary();
         return;
       }
 
       // Step 2: Perform analysis (with subagent enhancement if available)
       const analysis = await this.performAnalysis(changes);
+      this.usageTracker.trackAnalysisRun(changes.length);
+      
+      // Check cost thresholds
+      const costAlert = this.usageTracker.checkCostThresholds();
+      if (costAlert) {
+        console.warn(`Usage Alert: ${costAlert.message}`);
+        if (costAlert.type === 'limit-reached') {
+          throw new Error(`Cost limit exceeded: ${costAlert.message}`);
+        }
+      }
       
       // Step 3: Generate documentation requirements from enhanced analysis
       // Override local analyzer's requirements with ones based on actual content
@@ -261,20 +289,28 @@ export class AutoDocSyncSystem {
         console.log('No documentation updates required');
         // Still create a log entry for tracking purposes
         await this.createLogEntry(analysis, options);
+        await this.endSessionWithSummary();
         return;
       }
 
       // Step 4: Generate documentation content using templates
+      const templateOpId = this.usageTracker.startOperation('template');
       const processedRequirements = await this.processDocumentationRequirements(requirements, analysis);
+      this.usageTracker.endOperation(templateOpId, 'template');
       
       // Step 5: Write documentation updates
+      const writeOpId = this.usageTracker.startOperation('file-write');
       const writeResults = await this.outputManager.writeDocumentation(processedRequirements);
+      this.usageTracker.endOperation(writeOpId, 'file-write');
       
       // Step 6: Create development log entry
       await this.createLogEntry(analysis, options);
       
       // Step 7: Report results
       this.reportResults(writeResults, Date.now() - startTime);
+      
+      // Step 8: End session and show usage summary
+      await this.endSessionWithSummary();
       
     } catch (error) {
       console.error('Auto-Doc-Sync System execution failed:', error);
@@ -300,6 +336,9 @@ export class AutoDocSyncSystem {
       } catch (logError) {
         console.error('Failed to log error:', logError);
       }
+      
+      // End session even on error
+      await this.endSessionWithSummary();
       
       throw error;
     }
@@ -329,7 +368,15 @@ export class AutoDocSyncSystem {
     if (this.subagentIntegration) {
       try {
         console.log('Performing enhanced analysis with subagent...');
-        return await this.subagentIntegration.performEnhancedAnalysis(changes);
+        const subagentOpId = this.usageTracker.startOperation('subagent');
+        const result = await this.subagentIntegration.performEnhancedAnalysis(changes);
+        
+        // Get ACTUAL token usage from OpenAI API response
+        const actualTokens = this.subagentIntegration.getLastTokensUsed();
+        this.usageTracker.endOperation(subagentOpId, 'subagent', actualTokens);
+        
+        console.log(`Subagent used ${actualTokens} tokens (actual count from OpenAI)`);
+        return result;
       } catch (error) {
         console.warn('Subagent analysis failed, falling back to local analysis:', error);
       }
@@ -655,6 +702,34 @@ export class AutoDocSyncSystem {
     } catch (error) {
       console.warn('Failed to get working directory changes:', error);
       return [];
+    }
+  }
+
+  /**
+   * End usage tracking session and display summary
+   */
+  private async endSessionWithSummary(): Promise<void> {
+    try {
+      const sessionMetrics = await this.usageTracker.endSession();
+      if (sessionMetrics) {
+        console.log('\n--- Usage Summary ---');
+        console.log(`Session: ${sessionMetrics.sessionId}`);
+        console.log(`Analysis runs: ${sessionMetrics.analysisRuns}`);
+        console.log(`Files processed: ${sessionMetrics.filesProcessed}`);
+        console.log(`Tokens consumed: ${sessionMetrics.tokensConsumed}`);
+        console.log(`Estimated cost: $${sessionMetrics.estimatedCost.toFixed(4)}`);
+        console.log(`Execution time: ${sessionMetrics.executionTimeMs}ms`);
+        
+        if (sessionMetrics.operationBreakdown.length > 0) {
+          console.log('\nOperation breakdown:');
+          for (const op of sessionMetrics.operationBreakdown) {
+            console.log(`  ${op.type}: ${op.count} ops, ${op.durationMs}ms, $${op.cost.toFixed(4)}`);
+          }
+        }
+        console.log('-------------------\n');
+      }
+    } catch (error) {
+      console.warn('Failed to generate usage summary:', error);
     }
   }
 }

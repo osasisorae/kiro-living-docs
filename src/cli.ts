@@ -5,6 +5,7 @@
  */
 
 import { AutoDocSyncSystem } from './orchestrator';
+import { runUsageCLI } from './usage/cli';
 
 interface CLIOptions {
   trigger: 'git-hook' | 'manual';
@@ -65,6 +66,7 @@ Auto-Doc-Sync System - Autonomous Documentation Synchronization
 
 USAGE:
   auto-doc-sync [OPTIONS] [FILES...]
+  auto-doc-sync usage <command> [args]
 
 OPTIONS:
   --trigger=TYPE        Trigger type: 'manual' (default) or 'git-hook'
@@ -75,6 +77,12 @@ OPTIONS:
   --files=PATH1,PATH2   Comma-separated list of files to analyze
   -h, --help           Show this help message
   -v, --version        Show version information
+
+USAGE COMMANDS:
+  usage summary [days]     Show usage summary (default: 7 days)
+  usage current           Show current session metrics
+  usage projections       Show cost projections
+  usage recommendations   Show usage optimization recommendations
 
 EXAMPLES:
   # Manual trigger for all changes
@@ -91,6 +99,12 @@ EXAMPLES:
 
   # Use custom configuration
   auto-doc-sync --config=./my-config.json
+
+  # Show usage summary for last 30 days
+  auto-doc-sync usage summary 30
+
+  # Show cost projections
+  auto-doc-sync usage projections
 
 CONFIGURATION:
   The system looks for configuration in the following order:
@@ -148,6 +162,15 @@ async function main(): Promise<void> {
 
     if (options.version) {
       showVersion();
+      return;
+    }
+
+    // Check if this is a usage command
+    const args = process.argv.slice(2);
+    if (args[0] === 'usage') {
+      const command = args[1] || 'summary';
+      const commandArgs = args.slice(2);
+      await runUsageCLI(command, commandArgs);
       return;
     }
 

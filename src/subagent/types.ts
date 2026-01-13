@@ -64,6 +64,11 @@ export interface CodeAnalysisResponse {
   extractedClasses: any[];
   extractedAPIs: any[];
   extractedTypes: any[];
+  metadata?: {
+    processingTime: number;
+    tokensUsed: number;
+    model: string;
+  };
 }
 
 export interface ChangeClassificationRequest {
@@ -76,6 +81,11 @@ export interface ChangeClassificationResponse {
   apiModifications: any[];
   architecturalChanges: any[];
   documentationRequirements: any[];
+  metadata?: {
+    processingTime: number;
+    tokensUsed: number;
+    model: string;
+  };
 }
 
 export interface DocumentationGenerationRequest {
@@ -91,6 +101,9 @@ export interface DocumentationGenerationResponse {
     templateUsed: string;
     variablesApplied: string[];
     contentLength: number;
+    processingTime?: number;
+    tokensUsed?: number;
+    model?: string;
   };
 }
 
@@ -104,4 +117,9 @@ export interface TemplateProcessingResponse {
   processedContent: string;
   appliedVariables: string[];
   warnings?: string[];
+  metadata?: {
+    processingTime: number;
+    tokensUsed: number;
+    model: string;
+  };
 }

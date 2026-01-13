@@ -1,0 +1,39 @@
+[
+  {
+    "id": "metrics-1768290237988-ixj37klp1",
+    "timestamp": "2026-01-13T07:43:57.988Z",
+    "sessionId": "session-1768290237988-eiet8d9h6",
+    "analysisRuns": 1,
+    "filesProcessed": 3,
+    "tokensConsumed": 28460,
+    "estimatedCost": 0.51228,
+    "executionTimeMs": 24599,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 2,
+        "cost": 0
+      },
+      {
+        "type": "subagent",
+        "count": 1,
+        "durationMs": 24590,
+        "tokens": 28460,
+        "cost": 0.51228
+      },
+      {
+        "type": "template",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      },
+      {
+        "type": "file-write",
+        "count": 1,
+        "durationMs": 7,
+        "cost": 0
+      }
+    ]
+  }
+]

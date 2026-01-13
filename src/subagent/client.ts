@@ -153,7 +153,10 @@ export class SubagentClient {
       throw new Error(`Code analysis failed: ${response.error}`);
     }
 
-    return response.data as CodeAnalysisResponse;
+    // Attach metadata to the response data
+    const result = response.data as CodeAnalysisResponse;
+    result.metadata = response.metadata;
+    return result;
   }
 
   /**
@@ -172,7 +175,10 @@ export class SubagentClient {
       throw new Error(`Change classification failed: ${response.error}`);
     }
 
-    return response.data as ChangeClassificationResponse;
+    // Attach metadata to the response data
+    const result = response.data as ChangeClassificationResponse;
+    result.metadata = response.metadata;
+    return result;
   }
 
   /**
@@ -191,7 +197,17 @@ export class SubagentClient {
       throw new Error(`Documentation generation failed: ${response.error}`);
     }
 
-    return response.data as DocumentationGenerationResponse;
+    // Attach metadata to the response data
+    const result = response.data as DocumentationGenerationResponse;
+    if (response.metadata) {
+      result.metadata = {
+        ...result.metadata,
+        processingTime: response.metadata.processingTime,
+        tokensUsed: response.metadata.tokensUsed,
+        model: response.metadata.model
+      };
+    }
+    return result;
   }
 
   /**
@@ -210,7 +226,10 @@ export class SubagentClient {
       throw new Error(`Template processing failed: ${response.error}`);
     }
 
-    return response.data as TemplateProcessingResponse;
+    // Attach metadata to the response data
+    const result = response.data as TemplateProcessingResponse;
+    result.metadata = response.metadata;
+    return result;
   }
 
   /**
