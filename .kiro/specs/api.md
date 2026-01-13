@@ -1,6 +1,6 @@
 # API Documentation
 
-Generated: 2026-01-13T07:44:22.582Z
+Generated: 2026-01-13T08:03:57.090Z
 
 ## API Endpoints
 
@@ -36,7 +36,7 @@ Track the completion of an operation
 **Parameters:**
 - `operationId` (string) - The ID of the operation to end
 - `operationType` (OperationMetrics['type']) - The type of operation to end
-- `tokens` (number) - Optional number of tokens used in the operation
+- `tokens` (number) - Optional number of tokens consumed by the operation
 
 **Returns:** `void`
 
@@ -47,7 +47,7 @@ Track analysis run completion
 **Method:** `function`
 
 **Parameters:**
-- `filesProcessed` (number) - The number of files processed in the analysis run
+- `filesProcessed` (number) - The number of files processed during the analysis run
 
 **Returns:** `void`
 
@@ -85,120 +85,6 @@ Get current session metrics
 **Method:** `function`
 
 **Returns:** `Partial<UsageMetrics> | null`
-
-### calculateOperationCost
-
-Calculate cost for a specific operation
-
-**Method:** `function`
-
-**Parameters:**
-- `operationType` (OperationMetrics['type']) - The type of operation to calculate cost for
-- `tokens` (number) - The number of tokens used in the operation
-
-**Returns:** `number`
-
-### generateMetricsId
-
-Generate unique metrics ID
-
-**Method:** `function`
-
-**Returns:** `string`
-
-### ensureDataDirectory
-
-Ensure data directory exists
-
-**Method:** `function`
-
-**Returns:** `Promise<void>`
-
-### persistMetrics
-
-Persist metrics to file
-
-**Method:** `function`
-
-**Parameters:**
-- `metrics` (UsageMetrics) - The metrics to persist
-
-**Returns:** `Promise<void>`
-
-### loadMetricsInRange
-
-Load metrics within date range
-
-**Method:** `function`
-
-**Parameters:**
-- `startDate` (Date) - The start date of the range
-- `endDate` (Date) - The end date of the range
-
-**Returns:** `Promise<UsageMetrics[]>`
-
-### cleanupOldMetrics
-
-Clean up old metrics files
-
-**Method:** `function`
-
-**Returns:** `Promise<void>`
-
-### getEmptySummary
-
-Get empty summary for when tracking is disabled or no data exists
-
-**Method:** `function`
-
-**Returns:** `UsageSummary`
-
-### showSummary
-
-Display usage summary for the last N days
-
-**Method:** `function`
-
-**Parameters:**
-- `days` (number) - The number of days to include in the summary
-
-**Returns:** `Promise<void>`
-
-### showCurrentSession
-
-Display current session metrics (if any)
-
-**Method:** `function`
-
-**Returns:** `void`
-
-### showProjections
-
-Show cost projections based on current usage patterns
-
-**Method:** `function`
-
-**Returns:** `Promise<void>`
-
-### showRecommendations
-
-Show usage recommendations based on current patterns
-
-**Method:** `function`
-
-**Returns:** `Promise<void>`
-
-### runUsageCLI
-
-CLI entry point for usage commands
-
-**Method:** `function`
-
-**Parameters:**
-- `command` (string) - The command to execute
-- `args` (string[]) - Optional arguments for the command
-
-**Returns:** `Promise<void>`
 
 ### UsageTracker.startSession
 
@@ -264,94 +150,6 @@ UsageTracker method: getCurrentSessionMetrics
 
 **Returns:** `any`
 
-### UsageTracker.calculateOperationCost
-
-UsageTracker method: calculateOperationCost
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.generateMetricsId
-
-UsageTracker method: generateMetricsId
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.ensureDataDirectory
-
-UsageTracker method: ensureDataDirectory
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.persistMetrics
-
-UsageTracker method: persistMetrics
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.loadMetricsInRange
-
-UsageTracker method: loadMetricsInRange
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.cleanupOldMetrics
-
-UsageTracker method: cleanupOldMetrics
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.getEmptySummary
-
-UsageTracker method: getEmptySummary
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageCLI.showSummary
-
-UsageCLI method: showSummary
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageCLI.showCurrentSession
-
-UsageCLI method: showCurrentSession
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageCLI.showProjections
-
-UsageCLI method: showProjections
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageCLI.showRecommendations
-
-UsageCLI method: showRecommendations
-
-**Method:** `method`
-
-**Returns:** `any`
-
 ## New Features
 
 ### UsageTracker
@@ -359,14 +157,7 @@ UsageCLI method: showRecommendations
 Usage tracking system for cost monitoring and optimization
 
 **Category:** enhanced
-**Affected Files:** src/usage/tracker.ts, src/usage/types.ts, src/usage/cli.ts
-
-### UsageCLI
-
-CLI commands for usage tracking and cost monitoring
-
-**Category:** enhanced
-**Affected Files:** src/usage/tracker.ts, src/usage/types.ts, src/usage/cli.ts
+**Affected Files:** src/usage/tracker.ts
 
 ## Architectural Changes
 
@@ -377,16 +168,7 @@ CLI commands for usage tracking and cost monitoring
 
 Component modified: tracker
 
-### cli
-
-**Type:** component-modified
-**Impact:** medium
-
-Component modified: cli
-
 ## Changed Files
 
 - `src/usage/tracker.ts` (modified)
-- `src/usage/types.ts` (modified)
-- `src/usage/cli.ts` (modified)
 

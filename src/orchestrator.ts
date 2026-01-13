@@ -278,7 +278,7 @@ export class AutoDocSyncSystem {
           requirements.push({
             type: 'readme-section' as const,
             targetFile: this.resolveWorkspacePath('README.md'),
-            section: 'Features & API',
+            // Don't set section - we want AI to generate the full README
             content: '', // Will be generated in processDocumentationRequirements
             priority: 'medium' as const
           });
@@ -403,7 +403,8 @@ export class AutoDocSyncSystem {
         if (requirement.type === 'api-spec') {
           content = await this.generateAPIDocumentation(analysis);
         } else if (requirement.type === 'readme-section') {
-          content = await this.generateREADMEUpdate(analysis);
+          // Use AI to generate README instead of template
+          content = await this.generateREADMEWithAI(analysis, requirement.targetFile);
         }
         
         processedRequirements.push({
@@ -499,7 +500,61 @@ export class AutoDocSyncSystem {
   }
 
   /**
-   * Generate README update content
+   * Generate README update content using AI
+   */
+  private async generateREADMEWithAI(analysis: ChangeAnalysis, targetFile: string): Promise<string> {
+    // Try to use AI for README generation
+    if (this.subagentIntegration) {
+      try {
+        console.log('Generating README with AI...');
+        
+        // Read existing README if it exists
+        let existingContent: string | undefined;
+        try {
+          existingContent = await fs.readFile(targetFile, 'utf-8');
+        } catch {
+          existingContent = undefined;
+        }
+        
+        // Get project context from package.json
+        let projectContext: any = {};
+        try {
+          const packageJsonPath = this.resolveWorkspacePath('package.json');
+          const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+          projectContext = {
+            name: packageJson.name,
+            description: packageJson.description,
+            repository: packageJson.repository?.url || packageJson.repository,
+            license: packageJson.license
+          };
+        } catch {
+          // No package.json or failed to read
+        }
+        
+        const readmeOpId = this.usageTracker.startOperation('subagent');
+        const content = await this.subagentIntegration.generateReadme(
+          analysis,
+          existingContent,
+          projectContext
+        );
+        
+        // Get actual tokens used
+        const tokensUsed = this.subagentIntegration.getLastTokensUsed();
+        this.usageTracker.endOperation(readmeOpId, 'subagent', tokensUsed);
+        
+        console.log(`README generated with AI (${tokensUsed} tokens)`);
+        return content;
+      } catch (error) {
+        console.warn('AI README generation failed, falling back to template:', error);
+      }
+    }
+    
+    // Fallback to template-based generation
+    return await this.generateREADMEUpdate(analysis);
+  }
+
+  /**
+   * Generate README update content (fallback template)
    */
   private async generateREADMEUpdate(analysis: ChangeAnalysis): Promise<string> {
     let content = '';

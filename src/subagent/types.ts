@@ -23,7 +23,7 @@ export interface SubagentConfig {
 }
 
 export interface SubagentRequest {
-  type: 'code-analysis' | 'change-classification' | 'documentation-generation' | 'template-processing';
+  type: 'code-analysis' | 'change-classification' | 'documentation-generation' | 'template-processing' | 'readme-generation';
   payload: any;
   context?: SubagentContext;
 }
@@ -117,6 +117,30 @@ export interface TemplateProcessingResponse {
   processedContent: string;
   appliedVariables: string[];
   warnings?: string[];
+  metadata?: {
+    processingTime: number;
+    tokensUsed: number;
+    model: string;
+  };
+}
+
+export interface ReadmeGenerationRequest {
+  analysisResults: any;
+  existingContent?: string;
+  projectContext?: {
+    name?: string;
+    description?: string;
+    repository?: string;
+    license?: string;
+  };
+}
+
+export interface ReadmeGenerationResponse {
+  content: string;
+  sections: {
+    title: string;
+    content: string;
+  }[];
   metadata?: {
     processingTime: number;
     tokensUsed: number;
