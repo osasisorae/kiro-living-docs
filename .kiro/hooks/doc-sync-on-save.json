@@ -1,0 +1,13 @@
+{
+  "name": "doc-sync-on-save",
+  "description": "Update documentation when source files are saved",
+  "trigger": {
+    "type": "file-save",
+    "pattern": "src/**/*.{ts,tsx,js,jsx}"
+  },
+  "action": {
+    "type": "agent-prompt",
+    "prompt": "A source file was saved. Check if documentation needs updating:\n\n1. Identify any new or modified public APIs, functions, or classes\n2. If changes are significant, update:\n   - .kiro/specs/api.md for API changes\n   - README.md for new features\n3. Keep updates minimal and focused on actual changes."
+  },
+  "enabled": true
+}

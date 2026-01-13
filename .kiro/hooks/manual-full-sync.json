@@ -1,0 +1,12 @@
+{
+  "name": "manual-full-sync",
+  "description": "Manually trigger a full documentation sync",
+  "trigger": {
+    "type": "manual"
+  },
+  "action": {
+    "type": "agent-prompt",
+    "prompt": "Perform a full documentation sync:\n\n1. Analyze all source files in src/ for APIs, classes, and functions\n2. Update .kiro/specs/api.md with current API documentation\n3. Update README.md with current features and usage\n4. Create a development log entry in .kiro/development-log/\n5. Report what was updated"
+  },
+  "enabled": true
+}

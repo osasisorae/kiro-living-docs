@@ -1,0 +1,331 @@
+Hooks
+Agent hooks are powerful automation tools that streamline your development workflow by automatically executing predefined agent actions when specific events occur in your IDE. With hooks, you eliminate the need to manually request routine tasks and ensure consistency across your codebase.
+
+What are agent hooks?
+Agent hooks are automated triggers that execute predefined agent prompts or shell commands when specific events occur in your IDE. Rather than manually asking for routine tasks to be performed, hooks set up automated responses to events such as:
+
+Saving files
+Creating new files
+Deleting files
+User prompt submission
+Agent turn completion
+Agent hooks transform your development workflow through intelligent automation. By setting up hooks for common tasks, you can:
+
+Maintain consistent code quality
+Prevent security vulnerabilities
+Reduce manual overhead
+Standardize team processes
+Create faster development cycles
+Whether you're working on a small project or managing a large codebase, agent hooks help ensure that routine tasks are handled automatically and consistently, allowing you to focus on building great software.
+
+How agent hooks work
+The agent hook system follows a simple two-step process:
+
+Event Detection: The system monitors for specific events in your IDE
+Automated Action: When an event occurs, an action — either a predefined agent prompt or a shell command — is executed
+This automation flow eliminates repetitive tasks and ensures consistency across your codebase.
+
+Setting up agent hooks
+Creating and managing hooks is straightforward:
+
+Using the explorer view
+Navigate to the Agent Hooks section in the Kiro panel
+Click the + button to create a new hook
+Define the hook workflow using natural language in the input field
+Press Enter or click Submit to proceed
+Configure the hook settings and save
+Using the command palette
+You can also use the Command Palette to navigate to the Hook UI:
+
+Open the command palette with Cmd + Shift + P (Mac) or Ctrl + Shift + P (Windows/Linux)
+Type Kiro: Open Kiro Hook UI
+Follow the on-screen instructions to create your hook
+Next steps
+Now that you have created a hook file, you can further learn about hooks here:
+
+Hook Types - Learn about different trigger types and their use cases
+Hook Actions - Learn about different hook actions and their use cases
+Management - Learn how to organize, edit, and maintain your hooks
+Best Practices - Follow patterns for effective hook design
+Examples - See examples and templates you can use
+
+Hook types
+Agent Hooks support various trigger types, each designed for specific automation scenarios. Understanding these types helps you choose the right approach for your workflow needs.
+
+On prompt submit
+Triggers when the user submits a prompt.
+
+When using the shell command action, the user prompt can be accessed via the USER_PROMPT environment variable.
+
+Use Cases:
+
+Provide additional context to the agent relevant to the prompt
+Block certain prompts based on their content
+Log all user prompts to a central location
+On agent stop
+Triggers when the agent has completed its turn, and finished responding to the user.
+
+Use Cases:
+
+Compile code and report any failures to the agent
+Format any agent-generated code
+Review changes made by agent and provide additional instructions
+On file create
+Triggers when new files matching specific patterns are created in your workspace.
+
+Use Cases:
+
+Generate boilerplate code for new components
+Add license headers to new files
+Set up test files when creating implementation files
+On file save
+Trigger when files matching specific patterns are saved.
+
+Use Cases:
+
+Run linting and formatting
+Update related files
+Generate documentation
+Run tests for changed files
+On file delete
+Triggers when files matching specific patterns are deleted.
+
+Use Cases:
+
+Clean up related files
+Update import references in other files
+Maintain project integrity
+Manual trigger
+Manually execute a hook.
+
+Use Cases:
+
+On-demand code reviews
+Documentation generation
+Security scanning
+Performance optimization
+
+
+Hook actions
+Agent Hooks support both an "agent prompt" and a "shell command" action. Once you have selected the specific event that triggers a hook, you can decide what action will be taken by Kiro when that hook is triggered.
+
+Agent Prompt action
+With this action, you can define a prompt that is sent to the agent each time the hook is triggered. The agent will respond and act on this prompt just like it does with a prompt provided in the chat panel.
+
+In the case of the PromptSubmit trigger, this action is called "Add to prompt". The prompt specified in the hook is appended to the user prompt, and the combined prompt is sent to the agent.
+
+Shell Command action
+With this action, you can define a shell command that is executed each time the hook is triggered.
+
+If the command returns an exit code of "0" indicating success, the stdout output of the command is added to the agent's context.
+
+If the command returns any other exit code, the stderr output of the command is sent to the agent, and the agent is notified that the hook returned an error.
+
+Note
+This action is currently available only for the PromptSubmit and AgentStop triggers.
+
+Selecting an action type
+You should use the Agent Prompt action when, in response to a trigger event, you want to use natural language to instruct the agent to perform some action based on context.
+
+You should use the Shell Command action when you want to run a specific command(s) or perform a deterministic set of actions that do not depend on the agent's current context.
+
+Note that Agent Prompt actions consume credits as these actions trigger a new agent loop, whereas Shell Command actions do not. Shell Command actions are also generally faster than Agent Prompt actions as they are executed locally on your PC, and do not use an LLM.
+
+Hook examples
+These examples demonstrate real-world hook implementations that you can adapt for your own projects. Each example includes the trigger type, target patterns, and complete hook instructions.
+
+Security pre-commit scanner
+This hook helps prevent security leaks by scanning files before they're committed.
+
+Trigger Type: Agent Stop
+
+Agent Prompt:
+
+
+Review changed files for potential security issues:
+1. Look for API keys, tokens, or credentials in source code
+2. Check for private keys or sensitive credentials
+3. Scan for encryption keys or certificates
+4. Identify authentication tokens or session IDs
+5. Flag passwords or secrets in configuration files
+6. Detect IP addresses containing sensitive data
+7. Find hardcoded internal URLs
+8. Spot database connection credentials
+
+For each issue found:
+1. Highlight the specific security risk
+2. Suggest a secure alternative approach
+3. Recommend security best practices
+Centralized user prompt logging
+This hook logs all user prompts to a centralized logging system for analysis and/or auditing.
+
+Trigger Type: Prompt Submit
+
+Shell Command:
+
+
+# Log user prompt to Grafana Loki
+curl -H "Content-Type: application/json" -XPOST \
+     "http://loghost/loki/api/v1/push" --data-raw \
+     "{'streams': [{
+        'stream': { 'app': 'kiro', 'user': \"${USER}\"  },
+        'values': [ [\"$(date +%s%N)\", \"${USER_PROMPT}\"] ]
+      }]}"
+Internationalization helper
+This hook ensures that when you update text in your primary language file, translations are kept in sync.
+
+Trigger Type: File Save
+Target: src/locales/en/*.json
+
+Agent Prompt:
+
+
+When an English locale file is updated:
+1. Identify which string keys were added or modified
+2. Check all other language files for these keys
+3. For missing keys, add them with a "NEEDS_TRANSLATION" marker
+4. For modified keys, mark them as "NEEDS_REVIEW"
+5. Generate a summary of changes needed across all languages
+Test coverage maintainer
+This hook ensures test coverage remains high as code evolves.
+
+Trigger Type: File Save
+Target: src/**/*.{js,ts,jsx,tsx}
+
+Agent Prompt:
+
+
+When a source file is modified:
+1. Identify new or modified functions and methods
+2. Check if corresponding tests exist and cover the changes
+3. If coverage is missing, generate test cases for the new code
+4. Run the tests to verify they pass
+5. Update coverage reports
+Documentation generator
+This hook can be triggered on demand to update documentation to match code changes.
+
+Trigger Type: Manual Trigger
+
+Agent Prompt:
+
+
+Generate comprehensive documentation for the current file:
+1. Extract function and class signatures
+2. Document parameters and return types
+3. Provide usage examples based on existing code
+4. Update the README.md with any new exports
+5. Ensure documentation follows project standards
+Integration with MCP
+Agent Hooks can be enhanced with Model Context Protocol (MCP) capabilities to extend their functionality:
+
+Access to External Tools: Hooks can leverage MCP servers to access specialized tools and APIs
+Enhanced Context: MCP provides additional context for more intelligent hook actions
+Domain-Specific Knowledge: Specialized MCP servers can provide domain expertise
+To use MCP with hooks:
+
+Configure MCP servers
+Reference MCP tools in your hook instructions
+Set appropriate auto-approval settings for frequently used tools
+Use Cases:
+
+Make sure that your Figma design system is respected
+Update ticket status after a task is done
+Sync a database from sample files within the project folder
+Example: validate Figma design
+This hook monitors HTML and CSS files and validates that they follow a Figma design using the Figma MCP.
+
+Trigger Type: File Save Hook
+Target: *.css *.html
+
+Agent Prompt:
+
+
+Use the Figma MCP to analyze the updated html or css files and check that they follow
+established design patterns in the figma design. Verify elements like hero sections,
+feature highlights, navigation elements, colors, and button placements align.
+
+Hook management
+Effective hook management ensures your automation workflows remain organized, maintainable, and efficient as your project grows.
+
+Managing your hooks
+Access all your hooks through the Agent Hooks section in the Kiro panel.
+
+Enable/disable hooks
+Toggle hooks on/off without deleting them:
+
+Quick toggle: Click the eye icon next to any hook in the Agent Hooks panel
+From hook view: Select a hook and use the Hook Enabled switch in the top-right corner
+Edit existing hooks
+Hooks evolve with your workflow. Update them anytime by selecting your hook in the Agent Hooks panel and modifying settings like triggers, file patterns, instructions, or descriptions. Updates apply immediately.
+
+Delete hooks
+Select the hook in the Agent Hooks panel, click Delete Hook located at the bottom view, then click delete. This action cannot be undone.
+
+Run manual trigger hooks
+You can execute a manual trigger hook using:
+
+Quick run: Click the play button (▷) next to the hook name in the Agent Hooks panel
+From hook view: Select the hook and click Start Hook in the top-right corner
+
+Best practices
+Following these best practices will help you create reliable, efficient, and maintainable hooks that enhance your development workflow.
+
+Hook design
+Be specific and clear
+When using an agent prompt action, write detailed, unambiguous instructions for the agent
+Focus on one specific task per hook
+Use numbered steps for complex operations
+Test thoroughly
+Test hooks with some sample scenarios before deploying
+Verify hooks work with edge cases
+For file-related hooks, start with limited file patterns before expanding
+Monitor performance
+Ensure hooks don't slow down your workflow
+Consider the frequency of trigger events
+Optimize prompts for efficiency
+Security considerations
+Validate inputs
+Ensure hooks handle unexpected content gracefully
+Consider potential edge cases
+Test with malformed or unexpected input
+Limit scope
+For file-related hooks, target specific file types or directories when possible
+Use precise file patterns to avoid unnecessary executions
+Consider the impact of hooks on your entire codebase
+Review regularly
+Update hook logic as your project evolves
+Remove hooks that are no longer needed
+Refine prompts based on actual results
+Team collaboration
+Document hooks
+Maintain clear documentation of hook purposes
+Include examples of expected behavior
+Document any limitations or edge cases
+Share configurations
+Use consistent hooks across team members
+Store hook configurations in version control
+Create standard hooks for common team workflows
+Version control integration
+Consider hooks that integrate with your version control system
+Create hooks for code review workflows
+Use hooks to enforce team standards
+
+Troubleshooting Hooks
+Common issues
+Hook Not Triggering
+
+For file-related hooks, verify the file pattern matches your target files
+Check that the hook is enabled
+Ensure the event type is correct
+Unexpected Hook Behavior
+
+Review the hook instructions for clarity
+Check for conflicting hooks
+Verify file patterns aren't too broad
+Performance Issues
+
+For file-related hooks, limit hook scope with more specific file patterns
+For hooks with an agent prompt action, simplify any complex hook instructions
+For hooks with a shell command action, ensure that the command completes quickly
+Reduce the frequency of triggering events
+For additional information, consult the troubleshooting guide

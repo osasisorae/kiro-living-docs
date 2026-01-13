@@ -1,0 +1,12 @@
+{
+  "name": "doc-review-on-stop",
+  "description": "Review and validate documentation after agent completes code changes",
+  "trigger": {
+    "type": "agent-stop"
+  },
+  "action": {
+    "type": "shell-command",
+    "command": "node dist/cli.js --trigger=manual --reason='Post-agent documentation review'"
+  },
+  "enabled": false
+}

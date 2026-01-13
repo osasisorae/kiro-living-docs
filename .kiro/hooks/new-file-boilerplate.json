@@ -1,0 +1,13 @@
+{
+  "name": "new-file-boilerplate",
+  "description": "Add JSDoc boilerplate when new TypeScript files are created",
+  "trigger": {
+    "type": "file-create",
+    "pattern": "src/**/*.ts"
+  },
+  "action": {
+    "type": "agent-prompt",
+    "prompt": "A new TypeScript file was created. Add appropriate JSDoc documentation:\n\n1. Add a file-level JSDoc comment describing the module's purpose\n2. If the file contains classes or functions, add JSDoc comments with @param and @returns tags\n3. Follow the project's documentation standards"
+  },
+  "enabled": true
+}

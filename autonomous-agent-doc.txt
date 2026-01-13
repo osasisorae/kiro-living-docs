@@ -1,0 +1,600 @@
+Kiro autonomous agent
+Preview
+Kiro autonomous agent is currently in preview and gradually rolling out to Kiro Pro, Pro+, and Power users. Features and documentation may change as we improve the product.
+Kiro autonomous agent works independently on development tasks, from implementing features to fixing bugs. It operates asynchronously in isolated sandbox environments, learning from your code reviews and building deep understanding of your codebase and patterns.
+
+Get started
+Everything you need to begin using Kiro autonomous agent.
+
+Setup
+Connect GitHub and configure access
+Using the agent
+Learn how to work with the agent
+Configuration
+Agent Sandbox
+Isolated execution environment with configurable access controls
+GitHub Integration
+Seamless integration with GitHub repositories and pull requests
+
+
+Docs
+Autonomous agent
+Setup
+Setup
+Get started with Kiro autonomous agent (Preview) by connecting your GitHub account and configuring access to your repositories.
+
+Go to the web app
+Navigate to app.kiro.dev/agent to access Kiro autonomous agent.
+
+Log in with your Kiro account
+Sign in using your existing Kiro account.
+
+Link your GitHub account
+Connect your GitHub account to give the agent access to your repositories:
+
+Click "Connect GitHub" in Settings
+Authorize the Kiro Agent GitHub app
+Select which repositories the agent can access
+You must have write permissions on repositories for the agent to create branches and open pull requests.
+
+How repository access works: Kiro autonomous agent shows all repositories where both conditions are met:
+
+Your GitHub user has access to the repository
+The Kiro Agent GitHub app has been installed and authorized for that repository
+This means you'll see repositories from personal accounts, shared repositories, and organizations—as long as both your GitHub user and the Kiro Agent app have access.
+
+See the GitHub integration guide for detailed setup instructions.
+
+Next steps
+Once you've connected your GitHub account, you're ready to create your first task.
+
+
+Autonomous agent
+Using The Agent
+Using the agent
+Once you connect your Kiro autonomous agent (Preview) to GitHub, you can create tasks and work with the agent in several ways.
+
+Your first task
+Now that you've set up Kiro autonomous agent (Preview), let's create your first task.
+
+Go to app.kiro.dev/agent
+Optionally select repositories before starting your task
+Write a clear description of what you want the agent to do
+For your first task, try something straightforward like:
+
+"Add error handling to the login function in auth.ts"
+"Write unit tests for the UserService class"
+"Update the README with installation instructions"
+Or try something that spans multiple repositories:
+
+"Add a new API endpoint in the backend service and update the frontend client to call it"
+"Update the shared authentication library and migrate both the web and mobile apps to use the new version"
+Include any specific requirements or constraints in your description. You can always refine or add more details as the conversation progresses.
+
+Warning
+Only select repositories you trust, especially when mixing public and private repos, as the agent will learn from and follow instructions in the repository code even if these are malicious.
+
+If you didn't select repositories when starting the chat, you'll be prompted to choose them when you ask Kiro to work on something.
+
+Chat and tasks
+You can chat with the agent at any time to ask questions, discuss approaches, or provide context. When you're ready, ask the agent to create a task.
+
+Once a task is created in a chat, you cannot create a second task in that same chat. Any additional comments or steering will update the scope of the current task. Use this to:
+
+Steer the agent on the implementation approach
+Provide additional requirements or constraints
+Ask the agent to do more work after reviewing initial results
+To work on a different task, start a new chat.
+
+How it works
+When the agent is assigned a task, it follows a structured process:
+
+Environment setup - Spins up a new sandbox, loads any MCP servers, and looks for Dockerfiles in the repository
+Repository analysis - Clones the repositories and analyzes the codebase
+Planning - Proposes a plan and generates requirements and acceptance criteria to work against
+Execution - Assigns sub-agents to each step of the plan, verifying changes before moving forward
+Clarification - Asks questions if uncertain about any aspect of the work
+Completion - Opens pull requests and listens for feedback from you or CI/scanners
+Data retention
+Chats and tasks expire after 90 days, at which point the task logs and chat messages are deleted and no longer available. Any pull requests, code changes, or conversations on GitHub issues or pull requests are not deleted.
+
+Limits
+You can execute up to 10 concurrent tasks. Additional tasks will be queued and start automatically when a slot becomes available.
+
+Usage is subject to weekly limits during the preview. Limits reset each week, and there is no additional cost to use Kiro autonomous agent during the preview period.
+
+Web search
+Kiro autonomous agent can search the web to access current information in real-time. This enables the agent to get up-to-date answers about topics that may have changed since the model's training data was created.
+
+Web search capabilities have been designed to not reproduce meaningful chunks of text and should not be able to access webpages behind paywalls, authentication, and similar access restrictions. Search results may vary over time as internet content changes. Some content may not be accessible through web search due to various restrictions or the nature of the content.
+
+Citations are provided for output that incorporates web search or grounded information. You can follow a provided citation to the source page.
+
+Learn more
+Creating tasks
+Learn how to create and assign tasks from app.kiro.dev/agent or GitHub
+Chatting with the agent
+Interact with the agent to discuss approaches and provide guidance
+
+
+Chatting with the agent
+You can chat with Kiro autonomous agent to discuss approaches, ask questions, and provide guidance before and during task execution.
+
+Before creating a task
+Use chat to:
+
+Discuss different implementation approaches
+Clarify requirements or constraints
+Get the agent's input on technical decisions
+The agent has access to web search, learnings from previous code reviews, and context from other tasks to provide informed responses.
+
+During task execution
+Once a task is created, you can continue chatting to:
+
+Steer the agent on the implementation approach
+Provide additional requirements or constraints
+Ask the agent to do more work after reviewing initial results
+Any comments or steering will update the scope of the current task. You cannot create a second task in the same chat—to work on a different task, start a new chat.
+
+Page updated: November 25, 2025
+
+
+Docs
+Autonomous agent
+Using The Agent
+Creating Tasks
+Creating tasks
+You can create tasks for Kiro autonomous agent (Preview) in several ways, depending on your workflow.
+
+From app.kiro.dev/agent
+Navigate to app.kiro.dev/agent to start a new chat:
+
+Optionally select multiple repositories when starting the chat
+Describe what you want the agent to do
+If you didn't select repositories at the start, you'll be prompted to choose them when you ask Kiro to work on something
+The agent will analyze your request, break down the work, and begin execution.
+
+Kiro autonomous agent can work across multiple repositories in a single task. When you assign work that spans multiple repos, it coordinates all changes and opens pull requests in each one. Only select repositories you trust, especially when mixing public and private repos, as the agent will learn from and follow instructions in the repository code even if these are malicious.
+
+From GitHub issues
+You'll need to connect GitHub first.
+
+Using the /kiro command
+Mention /kiro in a comment on any issue to assign that specific task to Kiro autonomous agent.
+
+Using the Kiro label
+Add the kiro label to any issue. Kiro autonomous agent will start working on the task and listen to all comments on the issue for additional context or feedback.
+
+Task lifecycle
+Tasks move through different states as the agent works:
+
+Queued
+The task is waiting to start. This happens when you've reached the limit of 10 concurrent tasks.
+
+In progress
+The agent is actively working on the task, analyzing requirements, writing code, or running tests.
+
+Needs attention
+The task needs input or the agent has a clarification question. Review the agent's message and provide the requested information to unblock the task.
+
+Completed
+The agent has finished the work and opened pull requests. Review the changes and provide feedback. Providing feedback moves the task to queued and then to in progress when a parallel task slot becomes available.
+
+Cancelled
+The task was cancelled and will not be completed. Cancelled tasks cannot be resumed.
+
+Task tips
+Follow these best practices when creating tasks:
+
+Be specific about the outcome
+Clearly describe what you want the end result to look like. Instead of "improve the login flow," say "add password reset functionality to the login page with email verification."
+
+Describe the problem you're trying to solve
+Explain the context and why the work is needed. This helps the agent understand constraints and make better implementation decisions.
+
+Provide relevant context
+Link to related documentation, examples, or existing code that should inform the implementation.
+
+Define acceptance criteria
+List specific conditions that must be met for the task to be considered complete.
+
+Use steering files
+Kiro autonomous agent automatically looks for steering files in the .kiro/steering/ folder at the root of your repository. These markdown files define your team's standards, architecture, and conventions, ensuring the agent consistently follows your established patterns without needing to explain them in every task. Steering files are particularly useful for coding conventions, architecture patterns, technology stack preferences, and testing approaches.
+
+
+Autonomous agent
+Sandbox
+Agent Sandbox
+The agent sandbox provides a secure, isolated environment where Kiro autonomous agent executes tasks. Each task runs in its own sandbox with configurable access controls, ensuring your code and resources remain protected.
+
+How it works
+When you assign a task, Kiro autonomous agent:
+
+Spins up an isolated sandbox environment
+Clones authorized repositories into the sandbox
+Configures the environment based on your Dockerfile or detected project settings
+Executes the task with access only to explicitly permitted resources
+Tears down the sandbox when the task completes
+Configuration
+Configure sandbox access and behavior for your tasks.
+
+
+Internet Access
+Control which domains Kiro autonomous agent can access during task execution. You can choose from three network access levels: Connections access only, Common dependencies, or Open internet. You can also create a custom allow-list.
+
+Connections access only
+The minimum access level required for the sandbox to function. This allows the agent to:
+
+Clone GitHub repositories
+Open and update pull requests
+Access GitHub via our gateway service
+This is the most secure option and recommended when your tasks don't require external dependencies.
+
+Common dependencies
+Includes access to connections plus common package registries and development tools. This level allows the agent to install dependencies from popular package managers without requiring full internet access.
+
+The following domains are automatically allowed:
+
+
+alpinelinux.org
+amazonaws.com
+anaconda.com
+apache.org
+apt.llvm.org
+archlinux.org
+aws.amazon.com
+azure.com
+bitbucket.org
+bower.io
+centos.org
+cocoapods.org
+continuum.io
+cpan.org
+crates.io
+debian.org
+docker.com
+docker.io
+dot.net
+dotnet.microsoft.com
+eclipse.org
+fedoraproject.org
+gcr.io
+ghcr.io
+github.com
+githubusercontent.com
+gitlab.com
+golang.org
+google.com
+goproxy.io
+gradle.org
+hashicorp.com
+haskell.org
+hex.pm
+java.com
+java.net
+jcenter.bintray.com
+json-schema.org
+json.schemastore.org
+k8s.io
+launchpad.net
+maven.org
+mcr.microsoft.com
+metacpan.org
+microsoft.com
+nodejs.org
+npmjs.com
+npmjs.org
+nuget.org
+oracle.com
+packagecloud.io
+packages.microsoft.com
+packagist.org
+pkg.go.dev
+ppa.launchpad.net
+pub.dev
+pypa.io
+pypi.org
+pypi.python.org
+pythonhosted.org
+quay.io
+ruby-lang.org
+rubyforge.org
+rubygems.org
+rubyonrails.org
+rustup.rs
+rvm.io
+sourceforge.net
+spring.io
+swift.org
+ubuntu.com
+visualstudio.com
+yarnpkg.com
+Open internet
+Gives the sandbox unrestricted internet access.
+
+Info
+Enabling network permissions exposes your environment to security risks. These include prompt injection attacks, extraction of code and secrets, introduction of malware or security flaws, and use of content that may violate licensing terms. Consider these risks carefully before enabling network permissions.
+
+Custom allow-list
+You can specify a custom comma-separated list of allowed domains. Use the .domain format to include all subdomains.
+
+Examples:
+
+api.example.com - Allow only this specific domain
+.example.com - Allow example.com and all subdomains (api.example.com, www.example.com, etc.)
+api.example.com, .cdn.example.com - Allow multiple domains and subdomain patterns
+
+
+Environment Variables
+Configure environment variables and secrets for autonomous agent execution.
+
+Environment Variables
+Set environment variables that will be available to the agent during task execution. These are useful for configuration values that aren't sensitive.
+
+Secrets
+Securely manage sensitive credentials and API keys in the sandbox. Secrets are encrypted at rest and exposed as environment variables in the isolated sandbox during task execution. The agent may exfiltrate these secrets through code changes, logs, or external requests, so only provide secrets necessary for the task and only use the agent with repositories you trust.
+
+Duplicate Keys
+If the same key exists in both environment variables and secrets, the environment variable value takes precedence.
+
+
+
+MCP
+The MCP (Model Context Protocol) configuration is loaded into the agent sandbox and available during task execution. This allows the agent to use specialized tools and access external data sources through MCP servers.
+
+Important
+MCP servers are third-party tools. Only install servers from trusted sources and review their documentation and licensing. Kiro is not responsible for third-party MCP servers.
+
+Info
+MCP servers require Open Internet access to function. Enabling network permissions exposes your environment to security risks. These include prompt injection attacks, extraction of code and secrets, introduction of malware or security flaws, and use of content that may violate licensing terms. Consider these risks carefully before enabling network permissions.
+
+Configuration
+MCP servers are configured in your MCP configuration file. The configuration is loaded when the sandbox starts and remains available throughout task execution.
+
+Example configuration
+json
+
+{
+  "mcpServers": {
+    "aws-knowledge-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "fastmcp",
+        "run",
+        "https://knowledge-mcp.global.api.aws"
+      ],
+      "env": {}
+    }
+  }
+}
+Supported servers
+Only local MCP servers are currently supported. Remote MCP servers are not available at this time.
+
+Using environment variables and secrets
+You can reference environment variables and secrets in your MCP configuration to securely pass credentials and configuration values to MCP servers.
+
+Use the ${key_name} syntax to reference the key names of your environment variables and secrets in the server configuration:
+
+json
+
+{
+  "mcpServers": {
+    "server-name": {
+      "command": "executable",
+      "args": ["arg1", "arg2"],
+      "env": {
+        "ENV_VAR_KEY": "${my_env_var_key}",
+        "SECRET_KEY": "${my_secret_key}"
+      }
+    }
+  }
+}
+Both environment variables and secrets use the same syntax. The values are resolved when the sandbox starts.
+
+
+
+Environment Configuration
+You can configure the sandbox environment using a Dockerfile. This defines your development environment configuration, including dependencies, build commands, and runtime requirements.
+
+Automatic configuration
+Kiro autonomous agent looks for a Dockerfile in the root of your repository. If found, the agent automatically configures the sandbox based on these specifications, ensuring the environment matches your project's requirements.
+
+Only publicly available container images are supported. Private registry images and private repositories cannot be accessed by the sandbox.
+
+Dockerfile configuration
+You can use a standard Dockerfile to configure the sandbox environment. The agent will build and use the Docker image defined in your Dockerfile.
+
+Example Dockerfile:
+
+dockerfile
+
+FROM node:18
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy application code
+COPY . .
+
+# Set environment variables
+ENV NODE_ENV=production
+
+# Expose port
+EXPOSE 3000
+
+# Start command
+CMD ["npm", "start"]
+Page updated: December 12, 2025
+
+GitHub
+Kiro autonomous agent (Preview) integrates with GitHub to work on your repositories.
+
+Installation
+Connect your GitHub account to Kiro autonomous agent:
+
+Navigate to app.kiro.dev/agent and go to Settings
+Select "Connect GitHub" under Integrations
+Authorize the Kiro Agent GitHub app
+Grant access to specific repositories or all repositories in your organization
+The Kiro Agent GitHub app only needs to be installed once per organization or account. Organization owners select which repositories the app can access, controlling which repositories are available to Kiro.
+
+Individual users then connect their GitHub account to Kiro. Each user sees all repositories where both conditions are met:
+
+The Kiro Agent GitHub app has been installed and authorized for that repository
+The user's GitHub account has access to that repository
+This means you'll see repositories from personal accounts, shared repositories, and organizations—regardless of who installed the app—as long as your GitHub user has access.
+
+Users can only assign tasks to repositories where they have write permissions. Other users cannot assign tasks on your behalf—each user controls their own agent tasks.
+
+Assigning tasks from GitHub issues
+You can assign work to Kiro autonomous agent directly from GitHub issues in two ways:
+
+Add the kiro label - Kiro will start working on the task and listen to all comments on the issue for additional context or feedback.
+Mention /kiro in a comment - Assigns that specific issue to Kiro.
+If you use /kiro but haven't registered your GitHub account with Kiro, you'll receive instructions on how to sign up. The Kiro Agent GitHub app must be installed on the repository for this to work.
+
+How the agent works with GitHub
+Clones repositories
+The agent clones authorized repositories into its isolated sandbox environment. It can work across multiple repositories in a single task, maintaining context and coordinating changes.
+
+Creates branches and commits
+For each task, the agent creates a feature branch from your default branch, makes commits with clear messages, and pushes to your repository. The agent acts on your behalf and includes both you and itself as co-authors in every commit, ensuring proper attribution.
+
+Opens and updates pull requests
+After completing work, the agent opens pull requests with a detailed description of changes, implementation approach, and any trade-offs considered.
+
+The agent only responds to your explicit feedback and instructions (the user who created the task). When you provide feedback, the agent will address all comments on the pull request, including those from other reviewers. If you don't want a comment to be addressed, delete it before providing your feedback, or reply to it with your own perspective (which will trigger the agent to review).
+
+GitHub action feedback (automated checks, tests, security scans) is automatically addressed when you provide any feedback.
+
+You can provide feedback in two ways:
+
+Leave comments directly on the pull request
+Provide feedback from the task view on app.kiro.dev/agent
+Learns from your code reviews
+You can teach the agent your team's patterns through PR feedback. When you leave comments like "remember to use our standard error handling" or "always follow our naming conventions," the agent learns and applies those patterns to future work across all repositories. Only your feedback influences the agent's learnings—other reviewers' comments don't affect what the agent learns.
+
+Multiple users on the same repository
+When multiple team members have Kiro autonomous agent connected to the same repository, each user can independently assign tasks.
+
+How it works
+
+The Kiro Agent GitHub app only needs to be installed once per repository
+Each registered user can assign tasks independently
+If multiple users assign the same GitHub issue (using the kiro label or /kiro command), Kiro creates separate tasks for each user
+Each task runs independently in its own isolated sandbox environment
+Best practices
+
+Coordinate with your team to avoid duplicate work on the same issue
+Use GitHub's issue assignment feature to indicate who is working on what
+Review open pull requests before assigning similar tasks to avoid conflicts
+Permissions
+Connecting to GitHub requires several layers of access control.
+
+App installation and configuration
+The Kiro Agent GitHub app is installed once per organization or account by an owner. The app configuration is global and defines the maximum set of repositories that Kiro can access. All users in the organization share this app installation.
+
+Repository-level access
+Each user can only work with repositories where both conditions are met:
+
+The Kiro Agent GitHub app has been granted access by an organization owner
+The user has write permissions on the repository
+This two-layer approach ensures that owners control the maximum scope of access while individual users can only assign tasks to repositories they personally have access to.
+
+Repository permissions
+The following repository permissions are required:
+
+Read & Write:
+
+Actions - Workflows, workflow runs and artifacts
+Checks - Checks on code
+Contents - Repository contents, commits, branches, downloads, releases, and merges
+Issues - Issues and related comments, assignees, labels, and milestones
+Pull requests - Pull requests and related comments, assignees, labels, milestones, and merges
+Workflows - Update GitHub Action workflow files
+Read-only:
+
+Metadata - Search repositories, list collaborators, and access repository metadata (mandatory)
+Administration - Repository creation, deletion, settings, teams, and collaborators
+Commit statuses - Commit statuses
+Organization permissions
+Read-only:
+
+Administration - Manage access to an organization
+Webhook events
+The app subscribes to the following webhook events:
+
+Pull requests (opened, synchronized, closed, etc.)
+Pull request reviews (submitted, edited, dismissed)
+Pull request review comments (created, edited, deleted)
+Issues (opened, edited, closed, labeled, etc.)
+Issue comments (created, edited, deleted)
+Push events
+Branch and tag creation/deletion
+Releases (created, edited, published, etc.)
+Repository changes (created, deleted, renamed, etc.)
+Repository dispatch and ruleset events
+Workflow runs (requested, completed)
+Installation target changes
+User permissions
+Users must have write access to create branches and open pull requests.
+
+Branch protection
+The agent respects your branch protection rules. It cannot push directly to protected branches and must go through your standard pull request workflow.
+
+Organization policies
+If your organization has security policies or required status checks, the agent follows these requirements.
+
+Revocation
+Organization owners can revoke the agent's access at any time by removing repository permissions from the Kiro Agent GitHub app, which immediately blocks access for all users. Individual users can disconnect their GitHub account from Kiro at any time, which stops their agent from accessing any repositories.
+
+Data protection
+Shared responsibility model
+The AWS shared responsibility model applies to data protection in Kiro autonomous agent. As described in this model, AWS is responsible for protecting the global infrastructure that runs all of the AWS Cloud. You are responsible for maintaining control over your content that is hosted on this infrastructure. You are also responsible for the security configuration and management tasks for the AWS services that you use. For more information about data privacy, see the Data Privacy FAQ.
+
+Data storage
+Kiro autonomous agent stores your task descriptions, chat messages, code changes, and additional context to execute tasks and generate responses. For information about how data is encrypted, see Data encryption.
+
+AWS regions where content is stored and processed
+During the preview, all Kiro autonomous agent content, such as task descriptions, chat messages, and code changes, is stored in the US East (N. Virginia) Region.
+
+With cross-region inferencing, your content may be processed in a different Region within the United States. For more information, see Cross-region processing.
+
+Cross-region processing
+Kiro autonomous agent uses cross-region inference to distribute traffic across different AWS Regions to enhance large language model (LLM) inference performance and reliability. With cross-region inference, you get increased throughput and resilience during high demand periods, as well as improved performance.
+
+Cross-region inference doesn't affect where your data is stored. All data remains stored in the US East (N. Virginia) Region during the preview.
+
+Supported regions for Kiro autonomous agent cross-region inference
+Supported geography	Inference regions
+United States	
+US East (N. Virginia) (us-east-1)
+US West (Oregon) (us-west-2)
+US East (Ohio) (us-east-2)
+Data encryption
+This topic provides information specific to Kiro autonomous agent about encryption in transit and encryption at rest.
+
+Encryption in transit
+All communication between customers and Kiro autonomous agent and between Kiro autonomous agent and its downstream dependencies is protected using TLS 1.2 or higher connections.
+
+Encryption at rest
+Kiro autonomous agent encrypts your data using AWS owned encryption keys from AWS Key Management Service (AWS KMS). You don't have to take any action to protect the AWS managed keys that encrypt your data. For more information, see AWS owned keys in the AWS Key Management Service Developer Guide.
+
+Service improvement
+To help Kiro provide the most relevant information, we may use certain content from Kiro autonomous agent, such as task descriptions, chat messages, other inputs you provide, and the responses and code that Kiro generates, for service improvement. This page explains what content we use and how to opt out.
+
+Kiro autonomous agent content used for service improvement
+We may use certain content from Kiro autonomous agent for service improvement. Content that Kiro may use for service improvement includes, for example, your task descriptions, chat messages, other inputs you provide, and the responses and code that Kiro generates. Kiro may use this content, for example, to provide better responses to common questions, fix Kiro operational issues, for de-bugging, or for model training.
+
+Opt out of data sharing
+By default, Kiro autonomous agent collects content for service improvement. This section explains how to opt out of sharing your data.
+
+Opting out of sharing content in Kiro autonomous agent
+To opt out of sharing your client-side telemetry and content in Kiro autonomous agent:
+
+Go to app.kiro.dev/agent/settings
+Navigate to the Data collection section
+Toggle off Allow AWS to use your Kiro autonomous agent content for service improvement
