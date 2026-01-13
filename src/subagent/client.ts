@@ -288,9 +288,14 @@ export class SubagentClient {
       // Get the appropriate prompt and schema for the request type
       const { prompt, schema } = await this.buildPromptAndSchema(request);
       
+      // Select model based on task complexity
+      // Use gpt-4o-mini for simpler tasks to reduce cost
+      const model = this.selectModelForTask(request.type);
+      const maxTokens = this.getMaxTokensForTask(request.type);
+      
       // Make OpenAI API call with structured outputs
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o', // Use GPT-4o for structured outputs
+        model,
         messages: [
           {
             role: 'system',
@@ -302,7 +307,7 @@ export class SubagentClient {
           }
         ],
         temperature: this.config.configuration.temperature || 0.1,
-        max_tokens: this.config.configuration.maxTokens || 4000,
+        max_tokens: maxTokens,
         response_format: {
           type: 'json_schema',
           json_schema: {
@@ -343,6 +348,54 @@ export class SubagentClient {
           model: this.config.configuration.model
         }
       };
+    }
+  }
+
+  /**
+   * Select the appropriate model based on task complexity
+   * Uses cheaper models for simpler tasks to optimize cost
+   */
+  private selectModelForTask(taskType: string): string {
+    // Use gpt-4o-mini for simpler, more structured tasks
+    // Use gpt-4o for complex generation tasks
+    switch (taskType) {
+      case 'code-analysis':
+        // Code analysis benefits from the smarter model
+        return 'gpt-4o';
+      case 'change-classification':
+        // Classification is relatively simple
+        return 'gpt-4o-mini';
+      case 'documentation-generation':
+        // Doc generation needs quality
+        return 'gpt-4o';
+      case 'template-processing':
+        // Template processing is simple
+        return 'gpt-4o-mini';
+      case 'readme-generation':
+        // README needs quality writing
+        return 'gpt-4o';
+      default:
+        return 'gpt-4o-mini';
+    }
+  }
+
+  /**
+   * Get appropriate max tokens for each task type
+   */
+  private getMaxTokensForTask(taskType: string): number {
+    switch (taskType) {
+      case 'code-analysis':
+        return 4000;
+      case 'change-classification':
+        return 2000;
+      case 'documentation-generation':
+        return 4000;
+      case 'template-processing':
+        return 2000;
+      case 'readme-generation':
+        return 8000; // README can be longer
+      default:
+        return 4000;
     }
   }
 

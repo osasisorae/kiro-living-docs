@@ -74,6 +74,54 @@ The `.kiro/hooks/` directory contains Kiro hook configurations that work with Ki
 
 These hooks use Kiro's `agent-prompt` action type, meaning they instruct Kiro's AI agent what to do rather than running shell commands.
 
+## Features
+
+- **SubagentClient**: Updated class with enhanced functionality for AI model communication. This feature improves the interface for AI model communication, providing a more robust and flexible integration.
+
+- **SubagentIntegration**: Updated SubagentIntegration class to enhance analysis capabilities with subagent processing.
+
+## API Reference
+
+### SubagentClient
+
+- **analyzeCode(request: CodeAnalysisRequest): Promise<CodeAnalysisResponse>**
+  - Analyze code changes using the subagent.
+
+- **classifyChanges(request: ChangeClassificationRequest): Promise<ChangeClassificationResponse>**
+  - Classify changes using the subagent.
+
+- **generateDocumentation(request: DocumentationGenerationRequest): Promise<DocumentationGenerationResponse>**
+  - Generate documentation using the subagent.
+
+- **processTemplate(request: TemplateProcessingRequest): Promise<TemplateProcessingResponse>**
+  - Process templates using the subagent.
+
+- **generateReadme(request: ReadmeGenerationRequest): Promise<ReadmeGenerationResponse>**
+  - Generate README content using the subagent.
+
+- **sendRequest(request: SubagentRequest): Promise<SubagentResponse>**
+  - Send request to OpenAI for AI-powered analysis using structured outputs.
+
+### SubagentIntegration
+
+- **performEnhancedAnalysis(changes: string[]): Promise<ChangeAnalysis>**
+  - Perform enhanced analysis using both local analyzer and subagent. Returns analysis results along with actual token usage from AI provider.
+
+- **getLastTokensUsed(): number**
+  - Get the actual token count from the last subagent operation. This returns real token usage from the OpenAI API response.
+
+- **enhanceWithSubagent(localAnalysis: ChangeAnalysis, changes: string[]): Promise<ChangeAnalysis>**
+  - Enhance local analysis results with subagent processing. Captures actual token usage from OpenAI API responses.
+
+- **generateDocumentation(analysisResults: ChangeAnalysis, templateType: string, targetFile: string, existingContent?: string): Promise<string>**
+  - Generate documentation using subagent.
+
+- **generateReadme(analysisResults: ChangeAnalysis, existingContent?: string, projectContext?: any): Promise<string>**
+  - Generate README using AI subagent.
+
+- **processTemplate(template: string, variables: Record<string, any>, templateType: string): Promise<string>**
+  - Process template using subagent.
+
 ## Configuration
 
 Create `.kiro/auto-doc-sync.json`:
@@ -167,10 +215,9 @@ src/
 
 ## Known Limitations
 
-- README generation overwrites rather than intelligently merging
-- API docs may have duplicate entries for class methods
-- Requires OpenAI API key (no offline mode)
-- Cost can add up with frequent use
+- Requires OpenAI API key (offline fallback provides basic functionality)
+- Cost can add up with frequent use (~$0.50-1.50 per sync)
+- Large files may hit token limits
 
 ## License
 

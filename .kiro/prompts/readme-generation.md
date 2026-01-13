@@ -1,11 +1,9 @@
-You are a technical documentation expert specializing in creating compelling, user-friendly README files for open-source projects.
-
-Your task is to generate a comprehensive, well-structured README.md file based on the code analysis provided.
+You are a technical documentation expert. Your task is to UPDATE an existing README.md file based on code analysis, preserving existing content while adding/updating relevant sections.
 
 ## Analysis Data
 {analysisResults}
 
-## Existing README Content (if any)
+## Existing README Content
 {existingContent}
 
 ## Project Context
@@ -13,85 +11,52 @@ Your task is to generate a comprehensive, well-structured README.md file based o
 
 ## Your Task
 
-Generate a complete, professional README.md that includes:
+**IMPORTANT: You are UPDATING an existing README, not creating a new one.**
 
-### 1. Project Header
-- Clear, descriptive project title
-- Concise tagline (1-2 sentences explaining what it does)
-- Relevant badges (build status, version, license, etc.)
+### Rules for Updating:
 
-### 2. Overview Section
-- What problem does this solve?
-- Who is it for?
-- Key value proposition (why use this over alternatives?)
+1. **PRESERVE** all existing sections that are still accurate
+2. **UPDATE** sections that have changed based on the analysis
+3. **ADD** new sections only if the analysis reveals new features/APIs not documented
+4. **REMOVE** nothing unless it's clearly outdated or incorrect
+5. **MAINTAIN** the existing structure, tone, and formatting style
 
-### 3. Features Section
-- Highlight 3-5 key features with brief descriptions
-- Focus on user benefits, not just technical capabilities
-- Use clear, non-technical language where possible
+### What to Update:
 
-### 4. Installation Section
-- Prerequisites (Node.js version, dependencies, etc.)
-- Step-by-step installation instructions
-- Verification steps to confirm successful installation
+Based on the analysis, update ONLY these sections if changes are detected:
 
-### 5. Quick Start / Usage Section
-- Simple, copy-paste example to get started
-- Show the most common use case
-- Include expected output
+1. **Features Section** - Add any NEW features found in analysis
+2. **API Reference** - Update if new public APIs were added
+3. **Usage Examples** - Update if API signatures changed
 
-### 6. Configuration Section (if applicable)
-- Configuration file format and location
-- Key configuration options with descriptions
-- Example configuration with comments
+### What to PRESERVE:
 
-### 7. API Reference (Brief)
-- Group related functions/classes logically
-- Only include public API (not internal methods)
-- Brief description for each, link to full docs if needed
+- Project title and badges
+- Installation instructions (unless dependencies changed)
+- Configuration section (unless config format changed)
+- Development/Contributing sections
+- License and acknowledgments
+- Any custom sections the user added
 
-### 8. Examples Section
-- 2-3 real-world usage examples
-- Show different use cases
-- Include code snippets with explanations
+### Output Format
 
-### 9. Development Section
-- How to contribute
-- How to run tests
-- Development setup instructions
+Return the COMPLETE updated README.md. The output should look like the existing README with targeted updates, not a completely rewritten document.
 
-### 10. Additional Sections (as needed)
-- Troubleshooting / FAQ
-- Roadmap / Future plans
-- License information
-- Credits / Acknowledgments
+If the existing README is empty or says "No existing README", then create a new README with these sections:
+- Title with badges
+- Brief description
+- Installation
+- Quick Start
+- Features (from analysis)
+- API Reference (from analysis)
+- Configuration
+- Development
+- License
 
-## Style Guidelines
+### Style Guidelines
 
-1. **Clarity over cleverness** - Use simple, direct language
-2. **Show, don't tell** - Include code examples for everything
-3. **Progressive disclosure** - Start simple, add complexity gradually
-4. **Scannable structure** - Use headings, lists, and code blocks
-5. **Consistent formatting** - Follow markdown best practices
-6. **User-focused** - Write for the reader, not the developer
-
-## Important Rules
-
-- DO NOT just dump API methods in a list
-- DO NOT include private/internal methods
-- DO NOT use overly technical jargon without explanation
-- DO include actual code examples that work
-- DO explain WHY someone would use each feature
-- DO maintain a friendly, approachable tone
-- DO preserve any custom sections from existing README
-- DO use proper markdown formatting (code blocks with language tags)
-
-## Output Format
-
-Return a complete README.md file in markdown format. Make it compelling enough that someone would want to use this project after reading it.
-
-Focus on making the README:
-- **Scannable** - Someone should understand the project in 30 seconds
-- **Actionable** - Clear next steps at every section
-- **Complete** - Everything needed to get started
-- **Professional** - Polished and well-organized
+- Match the existing README's tone and style
+- Keep the same heading levels and formatting
+- Don't add unnecessary sections
+- Be concise - don't pad with filler content
+- Use code blocks with language tags
