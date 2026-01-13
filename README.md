@@ -1,164 +1,128 @@
 # Auto-Doc-Sync
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![Version](https://img.shields.io/badge/version-1.0.0-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+Autonomous Documentation Synchronization System for Kiro Projects
 
-## Autonomous Documentation Synchronization System for Kiro Projects
+Auto-Doc-Sync automatically keeps your documentation in sync with your code. When you save files, create new modules, or make changes, the system analyzes your code and updates documentation accordingly.
 
-Auto-Doc-Sync is an innovative system designed to automate the synchronization of documentation across Kiro projects. It ensures that your documentation is always up-to-date with the latest code changes, saving time and reducing errors.
+## How It Works
 
-## Overview
+Auto-Doc-Sync uses Kiro hooks to monitor your development workflow:
 
-Auto-Doc-Sync addresses the common problem of outdated or inconsistent documentation in software projects. It is ideal for developers and project managers who need to maintain accurate documentation without the hassle of manual updates. By automating this process, Auto-Doc-Sync enhances productivity and ensures that all team members have access to the latest information.
+1. **On File Save** - When you save source files, it checks if documentation needs updating
+2. **On File Create** - When you create new TypeScript files, it adds JSDoc boilerplate
+3. **Manual Trigger** - Run a full documentation sync on demand
+4. **CLI Integration** - Run from command line or git hooks
 
-### Key Benefits
-- **Efficiency**: Automates the documentation update process, reducing manual effort.
-- **Accuracy**: Ensures documentation reflects the latest code changes.
-- **Collaboration**: Facilitates better communication among team members by providing up-to-date information.
-
-## Features
-
-- **UsageTracker**: A comprehensive system for tracking usage metrics, monitoring costs, and optimizing resource allocation.
-- **UsageCLI**: Command-line interface for easy interaction with the usage tracking system, enabling quick setup and monitoring.
-- **Git Context Integration**: Seamlessly integrates with Git to retrieve context information, enhancing the documentation process.
+The system analyzes your code using AST parsing, identifies APIs, functions, and classes, then generates or updates documentation in `.kiro/specs/` and `README.md`.
 
 ## Installation
 
-### Prerequisites
-- Node.js v14 or higher
-- npm (Node Package Manager)
-
-### Steps
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/auto-doc-sync.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd auto-doc-sync
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-### Verification
-Run the following command to ensure everything is set up correctly:
 ```bash
-npm run test
+git clone https://github.com/yourusername/auto-doc-sync.git
+cd auto-doc-sync
+npm install
+npm run build
 ```
 
-## Quick Start
+## Usage
 
-To start using Auto-Doc-Sync, follow these simple steps:
+### Automatic (via Kiro Hooks)
 
-1. Initialize a new session:
-   ```javascript
-   const tracker = new UsageTracker();
-   tracker.startSession('session-123');
-   ```
-2. Track an operation:
-   ```javascript
-   const operationId = tracker.startOperation('analysis');
-   // Perform operation...
-   tracker.endOperation(operationId, 'analysis', 100);
-   ```
-3. End the session and persist metrics:
-   ```javascript
-   tracker.endSession().then(metrics => console.log(metrics));
-   ```
+The hooks in `.kiro/hooks/` are automatically active in Kiro:
+
+- **doc-sync-on-save** - Triggers on `src/**/*.{ts,tsx,js,jsx}` file saves
+- **new-file-boilerplate** - Triggers when new `.ts` files are created
+- **manual-full-sync** - Click play in Agent Hooks panel for full sync
+
+### Command Line
+
+```bash
+# Run documentation sync manually
+npx auto-doc-sync
+
+# Sync specific files
+npx auto-doc-sync src/api.ts src/types.ts
+
+# With a reason (for logging)
+npx auto-doc-sync --reason="Updated API endpoints"
+
+# View usage statistics
+npx auto-doc-sync usage summary
+npx auto-doc-sync usage projections
+```
+
+### Git Hooks
+
+Install git hooks to auto-sync on commits:
+
+```bash
+npx auto-doc-sync hooks install
+npx auto-doc-sync hooks check
+npx auto-doc-sync hooks uninstall
+```
 
 ## Configuration
 
-Auto-Doc-Sync can be configured via a configuration file located at `config/usage-config.json`.
+Create `.kiro/auto-doc-sync.json`:
 
-### Key Options
-- **enabled**: Enable or disable the tracking system.
-- **costLimitPerSession**: Set a cost limit for each session.
-- **costWarningThreshold**: Set a threshold for cost warnings.
-
-### Example Configuration
 ```json
 {
-  "enabled": true,
-  "costLimitPerSession": 100,
-  "costWarningThreshold": 80
+  "analysis": {
+    "includePatterns": ["**/*.ts", "**/*.js"],
+    "excludePatterns": ["**/node_modules/**", "**/*.test.*"],
+    "maxFileSize": 1048576,
+    "analysisDepth": "deep"
+  },
+  "output": {
+    "preserveFormatting": true,
+    "backupFiles": true
+  },
+  "subagent": {
+    "enabled": true
+  },
+  "hooks": {
+    "enabled": true,
+    "configPath": ".kiro/hooks"
+  }
 }
 ```
 
-## API Reference
+## Project Structure
 
-### UsageTracker
+```
+.kiro/
+├── hooks/              # Kiro hook configurations
+├── specs/              # Generated API documentation
+├── development-log/    # Change logs
+└── subagents/          # AI agent configurations
 
-- **startSession(sessionId: string): Promise<void>**
-  - Start tracking a new session.
-
-- **startOperation(operationType: string, operationId?: string): string**
-  - Begin tracking an operation.
-
-- **endOperation(operationId: string, operationType: string, tokens?: number): void**
-  - Complete tracking of an operation.
-
-- **trackAnalysisRun(filesProcessed: number): void**
-  - Record the completion of an analysis run.
-
-- **checkCostThresholds(): UsageAlert | null**
-  - Check if the current session exceeds cost thresholds.
-
-- **endSession(): Promise<UsageMetrics | null>**
-  - End the current session and save metrics.
-
-- **getUsageSummary(days: number): Promise<UsageSummary>**
-  - Retrieve a summary of usage over a specified period.
-
-## Examples
-
-### Example 1: Basic Usage Tracking
-```javascript
-const tracker = new UsageTracker();
-tracker.startSession('session-001');
-const opId = tracker.startOperation('analysis');
-// Perform some analysis...
-tracker.endOperation(opId, 'analysis', 150);
-tracker.endSession().then(metrics => console.log(metrics));
+src/
+├── analysis/           # Code analysis and AST parsing
+├── templates/          # Documentation templates
+├── hooks/              # Hook utilities
+├── logging/            # Development logging
+├── output/             # File writing
+├── subagent/           # AI integration
+└── usage/              # Usage tracking
 ```
 
-### Example 2: Cost Monitoring
-```javascript
-const tracker = new UsageTracker({ costLimitPerSession: 50 });
-tracker.startSession('session-002');
-// Perform operations...
-const alert = tracker.checkCostThresholds();
-if (alert) {
-  console.warn(alert.message);
-}
-tracker.endSession();
-```
+## Documentation Output
+
+The system generates:
+
+- **`.kiro/specs/api.md`** - API documentation with functions, parameters, return types
+- **`README.md`** - Updated with new features and APIs
+- **`.kiro/development-log/`** - Timestamped change logs
 
 ## Development
 
-### Contributing
-We welcome contributions! Please fork the repository and submit a pull request.
-
-### Running Tests
-To run tests, use:
 ```bash
-npm test
+npm install          # Install dependencies
+npm run build        # Build TypeScript
+npm test             # Run tests
+npm run test:watch   # Watch mode
 ```
-
-### Development Setup
-1. Ensure all dependencies are installed:
-   ```bash
-   npm install
-   ```
-2. Start the development server:
-   ```bash
-   npm start
-   ```
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-Special thanks to all contributors and the open-source community for their support and collaboration.
+MIT

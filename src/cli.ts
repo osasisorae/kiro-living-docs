@@ -6,6 +6,7 @@
 
 import { AutoDocSyncSystem } from './orchestrator';
 import { runUsageCLI } from './usage/cli';
+import { installGitHooks, uninstallGitHooks, checkGitHooks } from './hooks/install-git-hooks';
 
 interface CLIOptions {
   trigger: 'git-hook' | 'manual';
@@ -67,6 +68,7 @@ Auto-Doc-Sync System - Autonomous Documentation Synchronization
 USAGE:
   auto-doc-sync [OPTIONS] [FILES...]
   auto-doc-sync usage <command> [args]
+  auto-doc-sync hooks <command> [args]
 
 OPTIONS:
   --trigger=TYPE        Trigger type: 'manual' (default) or 'git-hook'
@@ -83,6 +85,14 @@ USAGE COMMANDS:
   usage current           Show current session metrics
   usage projections       Show cost projections
   usage recommendations   Show usage optimization recommendations
+
+HOOK COMMANDS:
+  hooks install [--force]  Install git hooks (.git/hooks/) for automatic doc sync on commits
+  hooks uninstall         Uninstall git hooks
+  hooks check             Check git hook installation status
+
+NOTE: These are git hooks, not Kiro hooks. Kiro hooks are configured via
+      .kiro/hooks/*.json and managed through the Kiro IDE.
 
 EXAMPLES:
   # Manual trigger for all changes
@@ -105,6 +115,12 @@ EXAMPLES:
 
   # Show cost projections
   auto-doc-sync usage projections
+
+  # Install git hooks
+  auto-doc-sync hooks install
+
+  # Check hook status
+  auto-doc-sync hooks check
 
 CONFIGURATION:
   The system looks for configuration in the following order:
@@ -171,6 +187,29 @@ async function main(): Promise<void> {
       const command = args[1] || 'summary';
       const commandArgs = args.slice(2);
       await runUsageCLI(command, commandArgs);
+      return;
+    }
+
+    // Check if this is a hooks command
+    if (args[0] === 'hooks') {
+      const command = args[1];
+      const force = args.includes('--force');
+      
+      switch (command) {
+        case 'install':
+          await installGitHooks({ force });
+          break;
+        case 'uninstall':
+          await uninstallGitHooks();
+          break;
+        case 'check':
+          await checkGitHooks();
+          break;
+        default:
+          console.error(`❌ Unknown hooks command: ${command}`);
+          console.error('Available commands: install, uninstall, check');
+          process.exit(1);
+      }
       return;
     }
 
