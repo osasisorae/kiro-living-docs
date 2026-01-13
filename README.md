@@ -1,5 +1,9 @@
 # Auto-Doc-Sync
 
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 Autonomous Documentation Synchronization System for Kiro Projects
 
 Auto-Doc-Sync automatically keeps your documentation in sync with your code. When you save files, create new modules, or make changes, the system analyzes your code and updates documentation accordingly.
@@ -105,6 +109,21 @@ src/
 ├── subagent/           # AI integration
 └── usage/              # Usage tracking
 ```
+
+## Documentation Coverage
+
+| Documentation Type | Status | What It Does |
+|-------------------|--------|--------------|
+| API Documentation | ✅ Covered | Extracts functions, classes, parameters, return types → `.kiro/specs/api.md` |
+| README | ✅ Partial | Updates feature lists and API summaries |
+| Development Logs | ✅ Covered | Creates timestamped change logs → `.kiro/development-log/` |
+| Architecture Docs | ✅ Basic | Detects component additions/removals → `.kiro/specs/architecture.md` |
+| Setup Instructions | ✅ Template | Has generator but not auto-triggered → `.kiro/specs/setup.md` |
+| Changelog | ❌ Missing | No version-based changelog generation |
+| Code Comments | ❌ Missing | Doesn't add/update inline comments |
+| Contributing Guide | ❌ Missing | No automation |
+| Config Documentation | ❌ Missing | Doesn't document config options |
+| Deployment Docs | ❌ Missing | No automation |
 
 ## Documentation Output
 
