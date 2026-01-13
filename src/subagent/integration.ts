@@ -250,6 +250,39 @@ export class SubagentIntegration {
   }
 
   /**
+   * Generate README using AI subagent
+   */
+  async generateReadme(
+    analysisResults: ChangeAnalysis,
+    existingContent?: string,
+    projectContext?: any
+  ): Promise<string> {
+    try {
+      // Check if OpenAI client is available
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('OPENAI_API_KEY not available, using fallback README generation');
+        return this.generateFallbackDocumentation(analysisResults, 'readme');
+      }
+
+      const response = await this.subagentClient.generateReadme({
+        analysisResults,
+        existingContent,
+        projectContext
+      });
+      
+      // Track tokens used
+      if (response.metadata?.tokensUsed) {
+        this.lastTokensUsed += response.metadata.tokensUsed;
+      }
+
+      return response.content;
+    } catch (error) {
+      console.warn('Subagent README generation failed:', error);
+      return this.generateFallbackDocumentation(analysisResults, 'readme');
+    }
+  }
+
+  /**
    * Process template using subagent
    */
   async processTemplate(

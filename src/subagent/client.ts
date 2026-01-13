@@ -20,7 +20,9 @@ import {
   DocumentationGenerationRequest,
   DocumentationGenerationResponse,
   TemplateProcessingRequest,
-  TemplateProcessingResponse
+  TemplateProcessingResponse,
+  ReadmeGenerationRequest,
+  ReadmeGenerationResponse
 } from './types';
 
 // Load environment variables
@@ -228,6 +230,28 @@ export class SubagentClient {
 
     // Attach metadata to the response data
     const result = response.data as TemplateProcessingResponse;
+    result.metadata = response.metadata;
+    return result;
+  }
+
+  /**
+   * Generate README content using the subagent
+   */
+  async generateReadme(request: ReadmeGenerationRequest): Promise<ReadmeGenerationResponse> {
+    const subagentRequest: SubagentRequest = {
+      type: 'readme-generation',
+      payload: request,
+      context: this.context
+    };
+
+    const response = await this.sendRequest(subagentRequest);
+    
+    if (!response.success) {
+      throw new Error(`README generation failed: ${response.error}`);
+    }
+
+    // Attach metadata to the response data
+    const result = response.data as ReadmeGenerationResponse;
     result.metadata = response.metadata;
     return result;
   }
@@ -534,6 +558,35 @@ export class SubagentClient {
             additionalProperties: false
           };
           break;
+          
+        case 'readme-generation':
+          prompt = await this.loadPromptFile('readme-generation.md');
+          const readmePayload = request.payload as ReadmeGenerationRequest;
+          prompt = prompt
+            .replace('{analysisResults}', JSON.stringify(readmePayload.analysisResults, null, 2))
+            .replace('{existingContent}', readmePayload.existingContent || 'No existing README')
+            .replace('{projectContext}', JSON.stringify(readmePayload.projectContext || {}, null, 2));
+          schema = {
+            type: "object",
+            properties: {
+              content: { type: "string" },
+              sections: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    content: { type: "string" }
+                  },
+                  required: ["title", "content"],
+                  additionalProperties: false
+                }
+              }
+            },
+            required: ["content", "sections"],
+            additionalProperties: false
+          };
+          break;
             
         default:
           throw new Error(`Unknown request type: ${request.type}`);
@@ -564,6 +617,8 @@ export class SubagentClient {
         return 'DocumentationGeneration';
       case 'template-processing':
         return 'TemplateProcessing';
+      case 'readme-generation':
+        return 'ReadmeGeneration';
       default:
         return 'GenericResponse';
     }
