@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { SystemConfig } from './orchestrator';
 import { DEFAULT_LOG_CONFIG } from './logging';
+import { DEFAULT_USAGE_CONFIG } from './usage';
 
 export interface ConfigValidationResult {
   valid: boolean;
@@ -107,6 +108,9 @@ export class ConfigManager {
       logging: {
         ...DEFAULT_LOG_CONFIG
       },
+      usage: {
+        ...DEFAULT_USAGE_CONFIG
+      },
       subagent: {
         enabled: true,
         configPath: '.kiro/subagents/doc-analysis-agent.json'
@@ -175,6 +179,31 @@ export class ConfigManager {
       }
     }
 
+    // Validate usage configuration
+    if (config.usage) {
+      if (config.usage.enabled !== undefined && typeof config.usage.enabled !== 'boolean') {
+        errors.push('usage.enabled must be a boolean');
+      }
+      if (config.usage.dataDirectory && typeof config.usage.dataDirectory !== 'string') {
+        errors.push('usage.dataDirectory must be a string');
+      }
+      if (config.usage.inputTokenCostPer1K && typeof config.usage.inputTokenCostPer1K !== 'number') {
+        errors.push('usage.inputTokenCostPer1K must be a number');
+      }
+      if (config.usage.outputTokenCostPer1K && typeof config.usage.outputTokenCostPer1K !== 'number') {
+        errors.push('usage.outputTokenCostPer1K must be a number');
+      }
+      if (config.usage.costWarningThreshold && typeof config.usage.costWarningThreshold !== 'number') {
+        errors.push('usage.costWarningThreshold must be a number');
+      }
+      if (config.usage.costLimitPerSession && typeof config.usage.costLimitPerSession !== 'number') {
+        errors.push('usage.costLimitPerSession must be a number');
+      }
+      if (config.usage.retentionDays && typeof config.usage.retentionDays !== 'number') {
+        errors.push('usage.retentionDays must be a number');
+      }
+    }
+
     // Validate subagent configuration
     if (config.subagent) {
       if (config.subagent.enabled !== undefined && typeof config.subagent.enabled !== 'boolean') {
@@ -222,6 +251,10 @@ export class ConfigManager {
       logging: {
         ...defaultConfig.logging,
         ...userConfig.logging
+      },
+      usage: {
+        ...defaultConfig.usage,
+        ...userConfig.usage
       },
       subagent: {
         ...defaultConfig.subagent,

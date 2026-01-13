@@ -8,9 +8,19 @@ import { SubagentContext } from './types';
 import { ChangeAnalysis, ChangedFile } from '../types';
 import { AnalysisConfig } from '../analysis/types';
 
+/**
+ * Result from enhanced analysis including actual token usage
+ */
+export interface EnhancedAnalysisResult {
+  analysis: ChangeAnalysis;
+  tokensUsed: number;
+  processingTimeMs: number;
+}
+
 export class SubagentIntegration {
   private subagentClient: SubagentClient;
   private analyzer: CodeAnalyzer;
+  private lastTokensUsed: number = 0;
 
   constructor(
     analyzerConfig: AnalysisConfig,
@@ -34,8 +44,11 @@ export class SubagentIntegration {
 
   /**
    * Perform enhanced analysis using both local analyzer and subagent
+   * Returns analysis results along with actual token usage from AI provider
    */
   async performEnhancedAnalysis(changes: string[]): Promise<ChangeAnalysis> {
+    this.lastTokensUsed = 0; // Reset token counter
+    
     try {
       // First, perform local analysis
       const localAnalysis = await this.analyzer.analyze(changes);
@@ -62,7 +75,16 @@ export class SubagentIntegration {
   }
 
   /**
+   * Get the actual token count from the last subagent operation
+   * This returns real token usage from the OpenAI API response
+   */
+  getLastTokensUsed(): number {
+    return this.lastTokensUsed;
+  }
+
+  /**
    * Enhance local analysis results with subagent processing
+   * Captures actual token usage from OpenAI API responses
    */
   private async enhanceWithSubagent(localAnalysis: ChangeAnalysis, changes: string[]): Promise<ChangeAnalysis> {
     try {
@@ -72,12 +94,22 @@ export class SubagentIntegration {
         filePaths: localAnalysis.changedFiles.map(f => f.path),
         diffContent: localAnalysis.changedFiles.map(f => f.diffContent).join('\n---\n')
       });
+      
+      // Capture actual tokens from code analysis response
+      if (codeAnalysisResponse.metadata?.tokensUsed) {
+        this.lastTokensUsed += codeAnalysisResponse.metadata.tokensUsed;
+      }
 
       // Use subagent for enhanced change classification
       const classificationResponse = await this.subagentClient.classifyChanges({
         changedFiles: localAnalysis.changedFiles,
         previousAnalysis: localAnalysis
       });
+      
+      // Capture actual tokens from classification response
+      if (classificationResponse.metadata?.tokensUsed) {
+        this.lastTokensUsed += classificationResponse.metadata.tokensUsed;
+      }
 
       // Convert AI extracted functions/classes to API definitions
       const aiAPIs: any[] = [];
