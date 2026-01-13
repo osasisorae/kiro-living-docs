@@ -4,66 +4,75 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Autonomous Documentation Synchronization System for Kiro Projects
+Automatic documentation synchronization powered by OpenAI. Analyzes your code and generates/updates documentation.
 
-Auto-Doc-Sync automatically keeps your documentation in sync with your code. When you save files, create new modules, or make changes, the system analyzes your code and updates documentation accordingly.
+## What It Does
 
-## How It Works
+Auto-Doc-Sync analyzes your TypeScript/JavaScript code using AST parsing, sends it to OpenAI's GPT-4o for intelligent analysis, and generates:
 
-Auto-Doc-Sync uses Kiro hooks to monitor your development workflow:
+- **API Documentation** → `.kiro/specs/api.md`
+- **Development Logs** → `.kiro/development-log/`
+- **README Updates** → `README.md`
 
-1. **On File Save** - When you save source files, it checks if documentation needs updating
-2. **On File Create** - When you create new TypeScript files, it adds JSDoc boilerplate
-3. **Manual Trigger** - Run a full documentation sync on demand
-4. **CLI Integration** - Run from command line or git hooks
+## Requirements
 
-The system analyzes your code using AST parsing, identifies APIs, functions, and classes, then generates or updates documentation in `.kiro/specs/` and `README.md`.
+- Node.js 18+
+- OpenAI API key
 
-## Installation
+## Setup
 
 ```bash
-git clone https://github.com/yourusername/auto-doc-sync.git
-cd auto-doc-sync
+# Clone and install
+git clone https://github.com/osasisorae/kiro-living-docs.git
+cd kiro-living-docs
 npm install
 npm run build
+
+# Set your OpenAI API key
+export OPENAI_API_KEY="your-key-here"
+# Or create a .env file with: OPENAI_API_KEY=your-key-here
 ```
 
 ## Usage
 
-### Automatic (via Kiro Hooks)
-
-The hooks in `.kiro/hooks/` are automatically active in Kiro:
-
-- **doc-sync-on-save** - Triggers on `src/**/*.{ts,tsx,js,jsx}` file saves
-- **new-file-boilerplate** - Triggers when new `.ts` files are created
-- **manual-full-sync** - Click play in Agent Hooks panel for full sync
-
-### Command Line
+### CLI Commands
 
 ```bash
-# Run documentation sync manually
+# Analyze all changed files
 npx auto-doc-sync
 
-# Sync specific files
+# Analyze specific files
 npx auto-doc-sync src/api.ts src/types.ts
 
-# With a reason (for logging)
+# With a reason (logged in dev log)
 npx auto-doc-sync --reason="Updated API endpoints"
 
-# View usage statistics
+# View usage/cost statistics
 npx auto-doc-sync usage summary
 npx auto-doc-sync usage projections
 ```
 
 ### Git Hooks
 
-Install git hooks to auto-sync on commits:
+Auto-sync documentation on commits:
 
 ```bash
-npx auto-doc-sync hooks install
-npx auto-doc-sync hooks check
-npx auto-doc-sync hooks uninstall
+npx auto-doc-sync hooks install   # Install post-commit and pre-push hooks
+npx auto-doc-sync hooks check     # Check hook status
+npx auto-doc-sync hooks uninstall # Remove hooks
 ```
+
+### Kiro IDE Integration
+
+The `.kiro/hooks/` directory contains Kiro hook configurations that work with Kiro's built-in agent:
+
+| Hook | Trigger | What It Does |
+|------|---------|--------------|
+| `doc-sync-on-save` | File save in `src/**/*.ts` | Prompts Kiro agent to check if docs need updating |
+| `new-file-boilerplate` | New `.ts` file created | Prompts Kiro agent to add JSDoc comments |
+| `manual-full-sync` | Manual trigger | Prompts Kiro agent to do full doc sync |
+
+These hooks use Kiro's `agent-prompt` action type, meaning they instruct Kiro's AI agent what to do rather than running shell commands.
 
 ## Configuration
 
@@ -74,8 +83,7 @@ Create `.kiro/auto-doc-sync.json`:
   "analysis": {
     "includePatterns": ["**/*.ts", "**/*.js"],
     "excludePatterns": ["**/node_modules/**", "**/*.test.*"],
-    "maxFileSize": 1048576,
-    "analysisDepth": "deep"
+    "maxFileSize": 1048576
   },
   "output": {
     "preserveFormatting": true,
@@ -83,55 +91,46 @@ Create `.kiro/auto-doc-sync.json`:
   },
   "subagent": {
     "enabled": true
-  },
-  "hooks": {
-    "enabled": true,
-    "configPath": ".kiro/hooks"
   }
 }
 ```
 
-## Project Structure
+## Architecture
 
 ```
-.kiro/
-├── hooks/              # Kiro hook configurations
-├── specs/              # Generated API documentation
-├── development-log/    # Change logs
-└── subagents/          # AI agent configurations
-
-src/
-├── analysis/           # Code analysis and AST parsing
-├── templates/          # Documentation templates
-├── hooks/              # Hook utilities
-├── logging/            # Development logging
-├── output/             # File writing
-├── subagent/           # AI integration
-└── usage/              # Usage tracking
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   CLI / Hook    │────▶│   Orchestrator   │────▶│  Code Analyzer  │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                        ┌──────────────────┐     ┌─────────────────┐
+                        │ Template Engine  │     │ OpenAI (GPT-4o) │
+                        └──────────────────┘     └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                        ┌──────────────────┐     ┌─────────────────┐
+                        │   File Writer    │     │ Structured JSON │
+                        └──────────────────┘     └─────────────────┘
 ```
 
-## Documentation Coverage
+**Key Components:**
+- `src/orchestrator.ts` - Main coordination logic
+- `src/analysis/` - AST parsing and code analysis
+- `src/subagent/` - OpenAI client with structured outputs
+- `src/templates/` - Documentation template engine
+- `src/output/` - File writing with backup support
+- `src/usage/` - Cost tracking and metrics
 
-| Documentation Type | Status | What It Does |
-|-------------------|--------|--------------|
-| API Documentation | ✅ Covered | Extracts functions, classes, parameters, return types → `.kiro/specs/api.md` |
-| README | ✅ Partial | Updates feature lists and API summaries |
-| Development Logs | ✅ Covered | Creates timestamped change logs → `.kiro/development-log/` |
-| Architecture Docs | ✅ Basic | Detects component additions/removals → `.kiro/specs/architecture.md` |
-| Setup Instructions | ✅ Template | Has generator but not auto-triggered → `.kiro/specs/setup.md` |
-| Changelog | ❌ Missing | No version-based changelog generation |
-| Code Comments | ❌ Missing | Doesn't add/update inline comments |
-| Contributing Guide | ❌ Missing | No automation |
-| Config Documentation | ❌ Missing | Doesn't document config options |
-| Deployment Docs | ❌ Missing | No automation |
+## Cost
 
-## Documentation Output
+The system uses OpenAI's GPT-4o model. Typical costs:
 
-The system generates:
+| Operation | Tokens | Cost |
+|-----------|--------|------|
+| Single file analysis | ~10-30k | $0.20-0.50 |
+| Multi-file sync | ~50-100k | $1.00-2.00 |
 
-- **`.kiro/specs/api.md`** - API documentation with functions, parameters, return types
-- **`README.md`** - Updated with new features and APIs
-- **`.kiro/development-log/`** - Timestamped change logs
+Use `npx auto-doc-sync usage summary` to track your spending.
 
 ## Development
 
@@ -141,6 +140,37 @@ npm run build        # Build TypeScript
 npm test             # Run tests
 npm run test:watch   # Watch mode
 ```
+
+## Project Structure
+
+```
+src/
+├── analysis/       # Code analysis and AST parsing
+├── hooks/          # Git hook installation
+├── logging/        # Development log generation
+├── output/         # File writing utilities
+├── subagent/       # OpenAI integration
+├── templates/      # Documentation templates
+├── usage/          # Cost tracking
+├── cli.ts          # CLI entry point
+├── config.ts       # Configuration management
+├── orchestrator.ts # Main orchestration
+└── index.ts        # Package entry point
+
+.kiro/
+├── hooks/          # Kiro IDE hook configurations
+├── prompts/        # OpenAI prompt templates
+├── specs/          # Generated API documentation
+├── subagents/      # Subagent configuration
+└── development-log/ # Generated change logs
+```
+
+## Known Limitations
+
+- README generation overwrites rather than intelligently merging
+- API docs may have duplicate entries for class methods
+- Requires OpenAI API key (no offline mode)
+- Cost can add up with frequent use
 
 ## License
 

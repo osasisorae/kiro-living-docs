@@ -1,150 +1,116 @@
 # API Documentation
 
-Generated: 2026-01-13T08:03:57.090Z
+Generated: 2026-01-13T10:22:23.928Z
 
 ## API Endpoints
 
-### startSession
+### resolveWorkspacePath
 
-Start tracking a new session
-
-**Method:** `function`
-
-**Parameters:**
-- `sessionId` (string) - The ID of the session to start tracking
-
-**Returns:** `Promise<void>`
-
-### startOperation
-
-Track the start of an operation
+Resolve a path relative to the workspace root.
 
 **Method:** `function`
 
 **Parameters:**
-- `operationType` (OperationMetrics['type']) - The type of operation to start tracking
-- `operationId` (string) - Optional ID for the operation
+- `relativePath` (string) - The relative path to resolve.
 
 **Returns:** `string`
 
-### endOperation
+### initialize
 
-Track the completion of an operation
+Initialize the system and load configurations.
+
+**Method:** `function`
+
+**Returns:** `Promise<void>`
+
+### run
+
+Main execution method that coordinates all system components.
 
 **Method:** `function`
 
 **Parameters:**
-- `operationId` (string) - The ID of the operation to end
-- `operationType` (OperationMetrics['type']) - The type of operation to end
-- `tokens` (number) - Optional number of tokens consumed by the operation
+- `options` (RunOptions) - Options for running the system.
 
-**Returns:** `void`
+**Returns:** `Promise<void>`
 
-### trackAnalysisRun
+### detectChanges
 
-Track analysis run completion
+Detect code changes based on trigger type.
 
 **Method:** `function`
 
 **Parameters:**
-- `filesProcessed` (number) - The number of files processed during the analysis run
+- `options` (RunOptions) - Options for detecting changes.
 
-**Returns:** `void`
+**Returns:** `Promise<string[]>`
 
-### checkCostThresholds
+### performAnalysis
 
-Check if current session exceeds cost thresholds
-
-**Method:** `function`
-
-**Returns:** `UsageAlert | null`
-
-### endSession
-
-End current session and persist metrics
-
-**Method:** `function`
-
-**Returns:** `Promise<UsageMetrics | null>`
-
-### getUsageSummary
-
-Get usage summary for a time period
+Perform code analysis with optional subagent enhancement.
 
 **Method:** `function`
 
 **Parameters:**
-- `days` (number) - The number of days to include in the summary
+- `changes` (string[]) - List of changes to analyze.
 
-**Returns:** `Promise<UsageSummary>`
+**Returns:** `Promise<ChangeAnalysis>`
 
-### getCurrentSessionMetrics
+### processDocumentationRequirements
 
-Get current session metrics
+Process documentation requirements using templates.
 
 **Method:** `function`
 
-**Returns:** `Partial<UsageMetrics> | null`
+**Parameters:**
+- `requirements` (DocumentationRequirement[]) - List of documentation requirements.
+- `analysis` (ChangeAnalysis) - Analysis results to use for processing.
 
-### UsageTracker.startSession
+**Returns:** `Promise<DocumentationRequirement[]>`
 
-UsageTracker method: startSession
+### AutoDocSyncSystem.resolveWorkspacePath
 
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.startOperation
-
-UsageTracker method: startOperation
+AutoDocSyncSystem method: resolveWorkspacePath
 
 **Method:** `method`
 
 **Returns:** `any`
 
-### UsageTracker.endOperation
+### AutoDocSyncSystem.initialize
 
-UsageTracker method: endOperation
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.trackAnalysisRun
-
-UsageTracker method: trackAnalysisRun
+AutoDocSyncSystem method: initialize
 
 **Method:** `method`
 
 **Returns:** `any`
 
-### UsageTracker.checkCostThresholds
+### AutoDocSyncSystem.run
 
-UsageTracker method: checkCostThresholds
-
-**Method:** `method`
-
-**Returns:** `any`
-
-### UsageTracker.endSession
-
-UsageTracker method: endSession
+AutoDocSyncSystem method: run
 
 **Method:** `method`
 
 **Returns:** `any`
 
-### UsageTracker.getUsageSummary
+### AutoDocSyncSystem.detectChanges
 
-UsageTracker method: getUsageSummary
+AutoDocSyncSystem method: detectChanges
 
 **Method:** `method`
 
 **Returns:** `any`
 
-### UsageTracker.getCurrentSessionMetrics
+### AutoDocSyncSystem.performAnalysis
 
-UsageTracker method: getCurrentSessionMetrics
+AutoDocSyncSystem method: performAnalysis
+
+**Method:** `method`
+
+**Returns:** `any`
+
+### AutoDocSyncSystem.processDocumentationRequirements
+
+AutoDocSyncSystem method: processDocumentationRequirements
 
 **Method:** `method`
 
@@ -152,23 +118,23 @@ UsageTracker method: getCurrentSessionMetrics
 
 ## New Features
 
-### UsageTracker
+### AutoDocSyncSystem
 
-Usage tracking system for cost monitoring and optimization
+Main orchestration system that coordinates all components.
 
 **Category:** enhanced
-**Affected Files:** src/usage/tracker.ts
+**Affected Files:** src/orchestrator.ts
 
 ## Architectural Changes
 
-### tracker
+### orchestrator
 
 **Type:** component-modified
 **Impact:** medium
 
-Component modified: tracker
+Component modified: orchestrator
 
 ## Changed Files
 
-- `src/usage/tracker.ts` (modified)
+- `src/orchestrator.ts` (modified)
 
