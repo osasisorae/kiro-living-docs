@@ -114,9 +114,23 @@ export class SubagentIntegration {
       // Convert AI extracted functions/classes to API definitions
       const aiAPIs: any[] = [];
       
-      // Convert extracted functions to APIs
+      // Convert extracted functions to APIs (skip if they belong to a class)
+      const classNames = new Set(
+        (codeAnalysisResponse.extractedClasses || []).map(cls => cls.name)
+      );
+      
       if (codeAnalysisResponse.extractedFunctions) {
         for (const func of codeAnalysisResponse.extractedFunctions) {
+          // Skip constructor and class methods (they'll be handled with classes)
+          if (func.name === 'constructor') continue;
+          
+          // Check if this function name matches a class method pattern
+          const isClassMethod = Array.from(classNames).some(className => 
+            func.name.startsWith(`${className}.`) || 
+            func.signature?.includes(`${className}.`)
+          );
+          if (isClassMethod) continue;
+          
           aiAPIs.push({
             name: func.name,
             method: 'function',
@@ -127,28 +141,27 @@ export class SubagentIntegration {
         }
       }
       
-      // Convert extracted classes to APIs (class methods)
+      // Convert extracted classes - only add the class itself, not individual methods
+      // This prevents duplicate entries (function + class.method)
       if (codeAnalysisResponse.extractedClasses) {
         for (const cls of codeAnalysisResponse.extractedClasses) {
-          // Add class itself as a feature
-          if (cls.methods && cls.methods.length > 0) {
-            for (const method of cls.methods) {
-              // Parse method signature if it's a string
-              const methodName = typeof method === 'string' 
-                ? method.split('(')[0].trim()
-                : method.name;
-              
-              if (methodName && !methodName.includes('constructor')) {
-                aiAPIs.push({
-                  name: `${cls.name}.${methodName}`,
-                  method: 'method',
-                  parameters: [],
-                  returnType: 'any',
-                  description: `${cls.name} method: ${methodName}`
-                });
-              }
-            }
-          }
+          const methodCount = cls.methods?.length || 0;
+          const methodNames = (cls.methods || [])
+            .map((m: string | { name: string }) => typeof m === 'string' ? m.split('(')[0].trim() : m.name)
+            .filter((n: string) => n && n !== 'constructor')
+            .slice(0, 5); // Show first 5 methods
+          
+          const methodSummary = methodNames.length > 0 
+            ? `Methods: ${methodNames.join(', ')}${methodCount > 5 ? ` (+${methodCount - 5} more)` : ''}`
+            : '';
+          
+          aiAPIs.push({
+            name: cls.name,
+            method: 'class',
+            parameters: [],
+            returnType: 'class',
+            description: cls.description || `${cls.name} class. ${methodSummary}`.trim()
+          });
         }
       }
       
@@ -313,37 +326,132 @@ export class SubagentIntegration {
 
   /**
    * Fallback documentation generation when subagent is unavailable
+   * Provides useful output even without AI
    */
   private generateFallbackDocumentation(analysisResults: ChangeAnalysis, templateType: string): string {
-    const { newFeatures, extractedAPIs, architecturalChanges } = analysisResults;
+    const { newFeatures, extractedAPIs, architecturalChanges, changedFiles } = analysisResults;
 
-    let content = `# Documentation Update\n\nGenerated: ${new Date().toISOString()}\n\n`;
+    let content = '';
+    
+    if (templateType === 'readme') {
+      // Generate a structured README section update
+      content = this.generateFallbackReadmeSection(analysisResults);
+    } else {
+      // Generate API documentation
+      content = `# Documentation Update\n\nGenerated: ${new Date().toISOString()}\n\n`;
+      content += `*Note: Generated in offline mode without AI enhancement*\n\n`;
 
-    if (newFeatures.length > 0) {
-      content += `## New Features\n\n`;
-      for (const feature of newFeatures) {
+      if (newFeatures.length > 0) {
+        content += `## New Features\n\n`;
+        for (const feature of newFeatures) {
+          content += `### ${feature.name}\n\n`;
+          content += `${feature.description}\n\n`;
+          if (feature.affectedFiles && feature.affectedFiles.length > 0) {
+            content += `**Files:** ${feature.affectedFiles.join(', ')}\n\n`;
+          }
+        }
+      }
+
+      if (extractedAPIs.length > 0) {
+        content += `## API Reference\n\n`;
+        for (const api of extractedAPIs) {
+          content += `### ${api.name}\n\n`;
+          if (api.description) {
+            content += `${api.description}\n\n`;
+          }
+          if (api.method) {
+            content += `**Type:** ${api.method}\n`;
+          }
+          if (api.parameters && api.parameters.length > 0) {
+            content += `\n**Parameters:**\n`;
+            for (const param of api.parameters) {
+              content += `- \`${param.name}\` (${param.type})${param.description ? `: ${param.description}` : ''}\n`;
+            }
+          }
+          if (api.returnType) {
+            content += `\n**Returns:** \`${api.returnType}\`\n`;
+          }
+          content += '\n';
+        }
+      }
+
+      if (architecturalChanges.length > 0) {
+        content += `## Architectural Changes\n\n`;
+        for (const change of architecturalChanges) {
+          content += `### ${change.component}\n\n`;
+          content += `**Type:** ${change.type}\n`;
+          content += `**Impact:** ${change.impact}\n\n`;
+          content += `${change.description}\n\n`;
+        }
+      }
+
+      if (changedFiles.length > 0) {
+        content += `## Changed Files\n\n`;
+        for (const file of changedFiles) {
+          content += `- \`${file.path}\` (${file.changeType})\n`;
+        }
+        content += '\n';
+      }
+    }
+
+    return content;
+  }
+
+  /**
+   * Generate a README section update in offline mode
+   */
+  private generateFallbackReadmeSection(analysisResults: ChangeAnalysis): string {
+    const { newFeatures, extractedAPIs } = analysisResults;
+    
+    let content = '';
+    
+    // Only generate content if we have meaningful data
+    const meaningfulFeatures = newFeatures.filter(f => 
+      f.description && f.description.length > 20 && 
+      !f.description.includes('with 0 methods')
+    );
+    
+    const meaningfulAPIs = extractedAPIs.filter(api => 
+      api.name && !api.name.includes('.if') && !api.name.includes('.for')
+    );
+    
+    if (meaningfulFeatures.length > 0) {
+      content += `## Features\n\n`;
+      for (const feature of meaningfulFeatures) {
         content += `- **${feature.name}**: ${feature.description}\n`;
       }
       content += '\n';
     }
-
-    if (extractedAPIs.length > 0) {
-      content += `## API Changes\n\n`;
-      for (const api of extractedAPIs) {
-        content += `- **${api.name}**: ${api.description || 'API endpoint'}\n`;
+    
+    if (meaningfulAPIs.length > 0) {
+      // Group APIs by type
+      const functions = meaningfulAPIs.filter(a => a.method === 'function');
+      const classes = meaningfulAPIs.filter(a => a.method === 'class');
+      
+      content += `## API Reference\n\n`;
+      
+      if (classes.length > 0) {
+        content += `### Classes\n\n`;
+        for (const cls of classes) {
+          content += `- **${cls.name}**: ${cls.description || 'Class'}\n`;
+        }
+        content += '\n';
       }
-      content += '\n';
-    }
-
-    if (architecturalChanges.length > 0) {
-      content += `## Architectural Changes\n\n`;
-      for (const change of architecturalChanges) {
-        content += `- **${change.component}**: ${change.description} (Impact: ${change.impact})\n`;
+      
+      if (functions.length > 0) {
+        content += `### Functions\n\n`;
+        for (const func of functions.slice(0, 10)) { // Limit to 10
+          const params = func.parameters?.map(p => `${p.name}: ${p.type}`).join(', ') || '';
+          content += `- \`${func.name}(${params})\` → \`${func.returnType || 'void'}\`\n`;
+        }
+        if (functions.length > 10) {
+          content += `- *...and ${functions.length - 10} more functions*\n`;
+        }
+        content += '\n';
       }
-      content += '\n';
     }
-
-    return content;
+    
+    return content || '*No significant changes detected*\n';
   }
 
   /**
