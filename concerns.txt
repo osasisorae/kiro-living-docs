@@ -1,0 +1,135 @@
+Looking at this README, I can see what you're building, but I have some critical concerns about whether this will actually work as a Kiro hack:
+Major Issues
+1. Missing the Core Implementation Detail
+The README doesn't explain HOW this actually works with Kiro hooks. You mention:
+
+"Integrates with Kiro hooks"
+"Automated git-hook triggers"
+Configuration for hooks at .kiro/hooks
+
+But there's no explanation of:
+
+What shell commands the Kiro hooks should run
+How the hooks are configured
+What the actual hook definitions look like
+How this tool receives context from Kiro (file paths, changed files, etc.)
+
+2. Git Hooks vs Kiro Hooks Confusion
+You mention both "git-hook triggers" and "Kiro hooks" - these are different things:
+
+Kiro hooks = IDE-level automation (file save, agent stop, etc.)
+Git hooks = Version control automation (pre-commit, post-merge, etc.)
+
+Your tool seems to conflate these two. For a Kiro hack, you should focus on Kiro hooks only.
+3. Unclear Tool Invocation
+The examples show:
+bashnpx auto-doc-sync src/api.ts src/types.ts --reason="Updated API endpoints"
+But Kiro hooks with Shell Commands don't work this way. Based on the Kiro docs, hooks would need to:
+
+Use environment variables like $FILE_PATH, $CHANGED_FILES, $WORKSPACE_ROOT
+Return output via stdout/stderr
+Execute quickly (since they run on file save)
+
+Your README doesn't show this integration pattern.
+4. No "Subagent" Explanation
+You have this config option:
+json"subagent": {
+  "enabled": true
+}
+What is a subagent? How does it work? Since you don't have access to Kiro's agent, is this your custom OpenAI-powered documentation generator? This is the most important part and it's completely unexplained.
+What's Missing for a Proper Kiro Hack
+Based on the Kiro hooks documentation, you need to show:
+1. Actual Kiro Hook Configurations
+Example hook that should be in your README:
+Hook: Documentation Sync on File Save
+
+Trigger Type: File Save
+Target: src/**/*.{ts,js,py}
+Shell Command:
+
+bash  npx auto-doc-sync sync-file --file "$FILE_PATH" --workspace "$WORKSPACE_ROOT"
+```
+
+### 2. **Hook Output Handling**
+Explain what your tool outputs:
+- Exit code 0 = success (stdout goes to agent context)
+- Non-zero exit code = error (stderr goes to agent)
+
+### 3. **The Documentation Engine**
+You need a clear section explaining:
+```
+## How It Works
+
+1. Kiro hook detects file save
+2. Executes: npx auto-doc-sync sync-file --file <path>
+3. Tool analyzes code using AST parsing
+4. Calls OpenAI API to generate documentation
+5. Updates inline comments or creates doc files
+6. Returns summary to Kiro
+4. Manual Trigger Hook
+Show how users can manually trigger full documentation:
+Hook: Generate Full Documentation
+
+Trigger Type: Manual Trigger
+Shell Command:
+
+bash  npx auto-doc-sync generate-full --output docs/
+Does This Make Sense as a Kiro Hack?
+Conceptually: YES ✅
+
+Auto-documentation is a great use case for Kiro hooks
+Using shell commands to call your own tool is the right approach
+The features you describe are valuable
+
+Execution-wise: INCOMPLETE ⚠️
+
+Missing the critical hook configuration examples
+No clear explanation of how Kiro invokes your tool
+Unclear what the "subagent" actually does
+No mention of OpenAI integration (your workaround for no Kiro agent)
+
+What You Should Add to the README
+1. "Kiro Integration" Section
+markdown## Kiro Integration
+
+### Setting Up Hooks
+
+Auto-Doc-Sync works with Kiro IDE through hooks. Here are the recommended configurations:
+
+#### On File Save - Sync Documentation
+Create a hook in Kiro with these settings:
+- **Trigger**: File Save
+- **Target**: `src/**/*.{ts,js,py}`
+- **Action**: Shell Command
+- **Command**: `npx auto-doc-sync sync --file "$FILE_PATH"`
+
+#### Manual Trigger - Full Regeneration
+- **Trigger**: Manual
+- **Action**: Shell Command  
+- **Command**: `npx auto-doc-sync generate-all`
+2. "Architecture" Section
+markdown## Architecture
+
+Auto-Doc-Sync uses OpenAI's GPT models to analyze code and generate documentation:
+
+1. **Code Analysis**: Parses TypeScript/JavaScript using AST
+2. **Context Building**: Extracts functions, classes, exports
+3. **LLM Processing**: Sends to OpenAI with specialized prompts
+4. **Documentation Generation**: Updates inline docs or creates files
+5. **Output**: Returns summary to Kiro IDE
+3. Environment Variables Section
+markdown## Environment Setup
+
+Required environment variables:
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+```
+
+The tool uses OpenAI's API for documentation generation.
+Bottom Line
+Your concept is solid for a Kiro hack, but the README needs to clearly explain:
+
+How Kiro hooks invoke your tool (with actual hook configs)
+That you're using OpenAI as your documentation engine
+What commands Kiro should run and what they do
+How the shell command integration works

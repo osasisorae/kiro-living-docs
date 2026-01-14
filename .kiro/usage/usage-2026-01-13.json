@@ -238,5 +238,79 @@
         "cost": 0
       }
     ]
+  },
+  {
+    "id": "metrics-1768301687718-uosezh92c",
+    "timestamp": "2026-01-13T10:54:47.718Z",
+    "sessionId": "session-1768301687718-s49vbc5l0",
+    "analysisRuns": 1,
+    "filesProcessed": 1,
+    "tokensConsumed": 71453,
+    "estimatedCost": 1.28617,
+    "executionTimeMs": 61008,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      },
+      {
+        "type": "subagent",
+        "count": 2,
+        "durationMs": 40923,
+        "tokens": 71453,
+        "cost": 1.28617
+      },
+      {
+        "type": "template",
+        "count": 1,
+        "durationMs": 20078,
+        "cost": 0
+      },
+      {
+        "type": "file-write",
+        "count": 1,
+        "durationMs": 6,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768301779401-3ka0ttne3",
+    "timestamp": "2026-01-13T10:56:19.401Z",
+    "sessionId": "session-1768301779401-ksxlfrwn0",
+    "analysisRuns": 1,
+    "filesProcessed": 1,
+    "tokensConsumed": 52503,
+    "estimatedCost": 0.94507,
+    "executionTimeMs": 62610,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 3,
+        "cost": 0
+      },
+      {
+        "type": "subagent",
+        "count": 2,
+        "durationMs": 42783,
+        "tokens": 52503,
+        "cost": 0.94507
+      },
+      {
+        "type": "template",
+        "count": 1,
+        "durationMs": 19818,
+        "cost": 0
+      },
+      {
+        "type": "file-write",
+        "count": 1,
+        "durationMs": 6,
+        "cost": 0
+      }
+    ]
   }
 ]
