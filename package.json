@@ -35,7 +35,9 @@
     "vitest": "^1.0.0"
   },
   "dependencies": {
+    "@types/chokidar": "^1.7.5",
     "@typescript-eslint/parser": "^6.0.0",
+    "chokidar": "^4.0.3",
     "dotenv": "^17.2.3",
     "openai": "^6.16.0",
     "typescript": "^5.0.0",

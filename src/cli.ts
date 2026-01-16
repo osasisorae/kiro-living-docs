@@ -11,6 +11,7 @@ import { installGitHooks, uninstallGitHooks, checkGitHooks } from './hooks/insta
 import { CommandRouter, parseArgs, createRouter } from './commands';
 import { Command, CommandResult, ParsedArgs, ExitCodes } from './commands/types';
 import { InitCommand } from './commands/init';
+import { WatchCommand } from './commands/watch';
 
 /**
  * Legacy command for backward compatibility with auto-doc-sync
@@ -112,20 +113,6 @@ class HooksCommand implements Command {
  * Placeholder commands for new kiro-docs functionality
  * These will be implemented in subsequent tasks
  */
-
-class WatchCommand implements Command {
-  name = 'watch';
-  description = 'Watch for file changes and auto-update documentation';
-  options = [
-    { name: 'debounce', description: 'Debounce time in milliseconds', type: 'number' as const, default: 500 },
-    { name: 'verbose', alias: 'v', description: 'Show detailed output', type: 'boolean' as const },
-  ];
-
-  async execute(_args: ParsedArgs): Promise<CommandResult> {
-    console.log('⚠️  Watch command not yet implemented');
-    return { success: false, message: 'Not implemented', exitCode: ExitCodes.GENERAL_ERROR };
-  }
-}
 
 class GenerateCommand implements Command {
   name = 'generate';

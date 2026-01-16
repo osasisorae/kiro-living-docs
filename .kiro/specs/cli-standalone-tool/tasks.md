@@ -44,30 +44,30 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
     - **Property 4: Dry-run/preview idempotence**
     - **Validates: Requirements 1.6**
 
-- [ ] 3. Implement FileWatcher service
-  - [ ] 3.1 Create FileWatcher with debouncing
+- [x] 3. Implement FileWatcher service
+  - [x] 3.1 Create FileWatcher with debouncing
     - Create `src/services/fileWatcher.ts` with chokidar integration
     - Implement debounce logic for rapid file changes
     - Support include/exclude patterns from config
     - _Requirements: 2.1, 2.5_
 
-  - [ ] 3.2 Write property test for debounce behavior
+  - [x] 3.2 Write property test for debounce behavior
     - **Property 6: Debounce coalesces rapid changes**
     - **Validates: Requirements 2.5**
 
-- [ ] 4. Implement WatchCommand
-  - [ ] 4.1 Implement WatchCommand core logic
+- [x] 4. Implement WatchCommand
+  - [x] 4.1 Implement WatchCommand core logic
     - Create `src/commands/watch.ts` implementing `Command` interface
     - Integrate FileWatcher service
     - Handle graceful shutdown on SIGINT/SIGTERM
     - Display status updates and change summaries
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.6_
 
-  - [ ] 4.2 Write property test for watch triggers
+  - [x] 4.2 Write property test for watch triggers
     - **Property 5: Watch triggers on pattern matches**
     - **Validates: Requirements 2.2**
 
-- [ ] 5. Checkpoint - Core infrastructure complete
+- [x] 5. Checkpoint - Core infrastructure complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Implement GenerateCommand
