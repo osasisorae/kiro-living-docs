@@ -93,3 +93,9 @@ This steering file defines architectural patterns and coding standards for the A
 - Clean up temporary data structures
 - Use lazy loading for template resources
 - Monitor memory usage in long-running operations
+
+### Issue Detection Agent Integration
+- Implement the `IssueDetectionRequest` and `IssueDetectionResponse` interfaces in `src/subagent/types.ts`.
+- Use the `IssueDetectionSchema` (Zod) for all AI-powered issue analysis.
+- Delegate the final `issues_create` call to the GitHub MCP server via a Kiro agent prompt.
+- Log all detected issues and their creation status in the development log.
