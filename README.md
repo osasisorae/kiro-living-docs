@@ -90,6 +90,8 @@ These hooks use Kiro's `agent-prompt` action type, meaning they instruct Kiro's 
 
 - **Command Line Argument Handling**: Enhanced command line argument parsing in the main entry point of the Auto-Doc-Sync System, allowing for more flexible configuration and execution.
 
+- **ConfigManager**: Manages configuration loading, validation, and saving for the Auto-Doc-Sync System.
+
 ## API Reference
 
 ### SubagentClient
@@ -142,6 +144,9 @@ These hooks use Kiro's `agent-prompt` action type, meaning they instruct Kiro's 
 
 - **main()**
   - CLI entry point for the Auto-Doc-Sync System. Parses command line arguments and initializes the system.
+
+- **ConfigManager.loadConfig(configPath?: string): SystemConfig**
+  - Load configuration from file or use defaults. Attempts to find configuration file in standard locations if no path is provided.
 
 ## Configuration
 

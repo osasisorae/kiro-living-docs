@@ -1,6 +1,10 @@
 /**
  * WatchCommand - Watch for file changes and auto-update documentation
  * Implements Requirement 2: Watch Mode for Automatic Documentation Updates
+ * 
+ * BEHAVIOR: Accumulates all file changes during the watch session, then
+ * processes them all at once when the user stops watching (Ctrl+C).
+ * This minimizes API calls and costs by batching all changes together.
  */
 
 import { Command, CommandResult, ParsedArgs, ExitCodes } from './types';
@@ -17,9 +21,17 @@ export interface WatchOptions {
   config?: string;
 }
 
+export interface TrackedChange {
+  path: string;
+  type: 'add' | 'change' | 'unlink';
+  firstSeen: Date;
+  lastSeen: Date;
+  changeCount: number;
+}
+
 export interface WatchState {
   isRunning: boolean;
-  changesProcessed: number;
+  trackedChanges: Map<string, TrackedChange>;
   lastChangeTime?: Date;
   errors: WatchError[];
   startTime: Date;
@@ -32,11 +44,12 @@ export interface WatchError {
 }
 
 /**
- * WatchCommand manages file watching and automatic documentation updates
+ * WatchCommand manages file watching and accumulates changes for batch processing
+ * Changes are only processed when the user stops watching (Ctrl+C)
  */
 export class WatchCommand implements Command {
   name = 'watch';
-  description = 'Watch for file changes and auto-update documentation';
+  description = 'Watch for file changes and auto-update documentation on exit';
   options = [
     { name: 'debounce', description: 'Debounce time in milliseconds', type: 'number' as const, default: 500 },
     { name: 'verbose', alias: 'v', description: 'Show detailed output', type: 'boolean' as const },
@@ -47,18 +60,18 @@ export class WatchCommand implements Command {
   private watcher: FileWatcher | null = null;
   private state: WatchState = {
     isRunning: false,
-    changesProcessed: 0,
+    trackedChanges: new Map(),
     errors: [],
     startTime: new Date(),
   };
   private system: AutoDocSyncSystem | null = null;
   private verbose = false;
-  private isProcessing = false;
-  private pendingFiles: Set<string> = new Set();
+  private workspaceRoot = '';
 
   async execute(args: ParsedArgs): Promise<CommandResult> {
     const options = this.parseOptions(args);
     this.verbose = options.verbose;
+    this.workspaceRoot = options.workspace;
 
     // Check if initialized
     const kiroDir = path.join(options.workspace, '.kiro');
@@ -83,7 +96,7 @@ export class WatchCommand implements Command {
     });
 
     // Set up event handlers
-    this.setupEventHandlers(options);
+    this.setupEventHandlers();
 
     // Set up graceful shutdown
     this.setupShutdownHandlers();
@@ -92,13 +105,13 @@ export class WatchCommand implements Command {
     console.log('👀 Starting watch mode...');
     console.log(`   Watching: ${config.analysis.includePatterns.join(', ')}`);
     console.log(`   Excluding: ${config.analysis.excludePatterns.join(', ')}`);
-    console.log(`   Debounce: ${options.debounceMs}ms`);
     console.log('');
-    console.log('Press Ctrl+C to stop watching.\n');
+    console.log('📝 Changes will be accumulated and processed when you stop watching.');
+    console.log('Press Ctrl+C to stop watching and process all changes.\n');
 
     this.state = {
       isRunning: true,
-      changesProcessed: 0,
+      trackedChanges: new Map(),
       errors: [],
       startTime: new Date(),
     };
@@ -134,72 +147,174 @@ export class WatchCommand implements Command {
   }
 
   /**
-   * Set up event handlers for file changes
+   * Set up event handlers for file changes - just track, don't process
    */
-  private setupEventHandlers(options: WatchOptions): void {
+  private setupEventHandlers(): void {
     this.watcher!.onFileChange(async (event) => {
-      await this.handleFileChange(event, options);
+      this.trackChange(event);
     });
   }
 
   /**
-   * Handle a file change event
+   * Track a file change event (accumulate for later processing)
    */
-  private async handleFileChange(event: FileChangeEvent, options: WatchOptions): Promise<void> {
+  private trackChange(event: FileChangeEvent): void {
     this.state.lastChangeTime = event.timestamp;
 
-    const icon = event.type === 'add' ? '➕' : event.type === 'unlink' ? '➖' : '📝';
-    console.log(`${icon} ${event.type}: ${event.path}`);
-
-    // Add to pending files
-    this.pendingFiles.add(event.path);
-
-    // If already processing, the file will be picked up in the next batch
-    if (this.isProcessing) {
-      if (this.verbose) {
-        console.log('   (queued for next batch)');
+    const icon = event.type === 'add' ? '➕' : event.type === 'unlink' ? '🗑️' : '📝';
+    
+    const existing = this.state.trackedChanges.get(event.path);
+    
+    if (existing) {
+      // Update existing tracked change
+      existing.lastSeen = event.timestamp;
+      existing.changeCount++;
+      // If file was deleted then re-added, update the type
+      if (event.type !== existing.type) {
+        existing.type = event.type;
       }
-      return;
+      
+      if (this.verbose) {
+        console.log(`${icon} ${event.type}: ${event.path} (${existing.changeCount} changes)`);
+      }
+    } else {
+      // Track new change
+      this.state.trackedChanges.set(event.path, {
+        path: event.path,
+        type: event.type,
+        firstSeen: event.timestamp,
+        lastSeen: event.timestamp,
+        changeCount: 1,
+      });
+      
+      console.log(`${icon} ${event.type}: ${event.path}`);
     }
 
-    // Process the change
-    await this.processChanges(options);
+    // Show running total
+    const total = this.state.trackedChanges.size;
+    console.log(`   📊 ${total} file(s) tracked for processing\n`);
   }
 
   /**
-   * Process pending file changes
+   * Set up graceful shutdown handlers
    */
-  private async processChanges(options: WatchOptions): Promise<void> {
-    if (this.pendingFiles.size === 0 || !this.system) {
+  private setupShutdownHandlers(): void {
+    let isShuttingDown = false;
+    
+    const shutdown = async (signal: string) => {
+      // Prevent multiple shutdown attempts
+      if (isShuttingDown) {
+        return;
+      }
+      isShuttingDown = true;
+      
+      console.log(`\n\n🛑 Received ${signal}, processing accumulated changes...`);
+      await this.gracefulShutdown();
+    };
+
+    // Handle SIGINT (Ctrl+C) - prevent default exit behavior
+    process.on('SIGINT', () => {
+      shutdown('SIGINT').catch(console.error);
+    });
+    
+    process.on('SIGTERM', () => {
+      shutdown('SIGTERM').catch(console.error);
+    });
+  }
+
+  /**
+   * Gracefully shutdown the watcher and process all accumulated changes
+   */
+  private async gracefulShutdown(): Promise<void> {
+    if (!this.state.isRunning) {
       return;
     }
 
-    this.isProcessing = true;
-    const filesToProcess = Array.from(this.pendingFiles);
-    this.pendingFiles.clear();
+    this.state.isRunning = false;
+
+    // Stop the watcher first
+    if (this.watcher) {
+      await this.watcher.stop();
+    }
+
+    // Process all accumulated changes
+    await this.processAccumulatedChanges();
+
+    // Display summary
+    this.displaySummary();
+
+    // Resolve the watch promise
+    if ((this as any).resolveWatch) {
+      (this as any).resolveWatch({
+        success: true,
+        data: {
+          filesProcessed: this.state.trackedChanges.size,
+          errors: this.state.errors,
+        },
+        exitCode: ExitCodes.SUCCESS,
+      });
+    }
+  }
+
+  /**
+   * Process all accumulated changes in a single batch
+   */
+  private async processAccumulatedChanges(): Promise<void> {
+    const trackedFiles = Array.from(this.state.trackedChanges.values());
+    
+    if (trackedFiles.length === 0) {
+      console.log('\n📭 No changes detected during watch session.\n');
+      return;
+    }
+
+    // Filter out deleted files - we only want to process files that exist
+    const filesToProcess = trackedFiles
+      .filter(change => change.type !== 'unlink')
+      .map(change => {
+        // Convert to absolute path if needed
+        const filePath = path.isAbsolute(change.path) 
+          ? change.path 
+          : path.join(this.workspaceRoot, change.path);
+        return filePath;
+      })
+      .filter(filePath => fs.existsSync(filePath));
+
+    if (filesToProcess.length === 0) {
+      console.log('\n📭 No processable files (all were deleted).\n');
+      return;
+    }
+
+    console.log(`\n🔄 Processing ${filesToProcess.length} file(s) in batch...`);
+    
+    if (this.verbose) {
+      console.log('\nFiles to process:');
+      for (const file of filesToProcess) {
+        const relativePath = path.relative(this.workspaceRoot, file);
+        const change = this.state.trackedChanges.get(relativePath) || 
+                       this.state.trackedChanges.get(file);
+        const changeCount = change?.changeCount || 1;
+        console.log(`   - ${relativePath} (${changeCount} change${changeCount > 1 ? 's' : ''})`);
+      }
+      console.log('');
+    }
+
+    if (!this.system) {
+      console.error('❌ System not initialized');
+      return;
+    }
 
     try {
-      console.log(`\n🔄 Processing ${filesToProcess.length} file(s)...`);
-      
-      if (this.verbose) {
-        for (const file of filesToProcess) {
-          console.log(`   - ${file}`);
-        }
-      }
-
       await this.system.run({
         triggerType: 'manual',
         targetFiles: filesToProcess,
-        reason: 'Watch mode auto-sync',
+        reason: `Watch mode batch sync - ${filesToProcess.length} files`,
       });
 
-      this.state.changesProcessed += filesToProcess.length;
-      console.log(`✅ Documentation updated (${this.state.changesProcessed} total changes processed)\n`);
+      console.log(`\n✅ Documentation updated successfully!\n`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`❌ Error processing changes: ${errorMessage}`);
+      console.error(`\n❌ Error processing changes: ${errorMessage}`);
       
-      // Log error but continue watching
       for (const file of filesToProcess) {
         this.state.errors.push({
           file,
@@ -211,56 +326,6 @@ export class WatchCommand implements Command {
       if (this.verbose && error instanceof Error && error.stack) {
         console.error(error.stack);
       }
-
-      console.log('   Continuing to watch for changes...\n');
-    } finally {
-      this.isProcessing = false;
-
-      // Check if more files were queued while processing
-      if (this.pendingFiles.size > 0) {
-        await this.processChanges(options);
-      }
-    }
-  }
-
-  /**
-   * Set up graceful shutdown handlers
-   */
-  private setupShutdownHandlers(): void {
-    const shutdown = async () => {
-      await this.gracefulShutdown();
-    };
-
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-  }
-
-  /**
-   * Gracefully shutdown the watcher
-   */
-  private async gracefulShutdown(): Promise<void> {
-    if (!this.state.isRunning) {
-      return;
-    }
-
-    console.log('\n\n🛑 Shutting down watch mode...');
-    this.state.isRunning = false;
-
-    // Stop the watcher
-    if (this.watcher) {
-      await this.watcher.stop();
-    }
-
-    // Display summary
-    this.displaySummary();
-
-    // Resolve the watch promise
-    if ((this as any).resolveWatch) {
-      (this as any).resolveWatch({
-        success: true,
-        data: this.state,
-        exitCode: ExitCodes.SUCCESS,
-      });
     }
   }
 
@@ -272,10 +337,20 @@ export class WatchCommand implements Command {
     const minutes = Math.floor(duration / 60000);
     const seconds = Math.floor((duration % 60000) / 1000);
 
+    const trackedFiles = Array.from(this.state.trackedChanges.values());
+    const totalChanges = trackedFiles.reduce((sum, f) => sum + f.changeCount, 0);
+    const addedFiles = trackedFiles.filter(f => f.type === 'add').length;
+    const modifiedFiles = trackedFiles.filter(f => f.type === 'change').length;
+    const deletedFiles = trackedFiles.filter(f => f.type === 'unlink').length;
+
     console.log('\n📊 Watch Session Summary');
     console.log('─'.repeat(40));
     console.log(`   Duration: ${minutes}m ${seconds}s`);
-    console.log(`   Changes processed: ${this.state.changesProcessed}`);
+    console.log(`   Files tracked: ${trackedFiles.length}`);
+    console.log(`   Total changes: ${totalChanges}`);
+    console.log(`     ➕ Added: ${addedFiles}`);
+    console.log(`     📝 Modified: ${modifiedFiles}`);
+    console.log(`     🗑️  Deleted: ${deletedFiles}`);
     console.log(`   Errors: ${this.state.errors.length}`);
 
     if (this.state.errors.length > 0 && this.verbose) {
