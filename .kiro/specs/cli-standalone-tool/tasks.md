@@ -78,14 +78,12 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
     - Display generation summary
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ] 6.2 Write property tests for generate filtering
-    - **Property 7: Generate processes all configured files**
-    - **Property 8: Generate filter options restrict scope**
-    - **Validates: Requirements 3.1, 3.2, 3.3**
-
-  - [ ] 6.3 Write property test for generate summary
-    - **Property 9: Generate summary accuracy**
-    - **Validates: Requirements 3.4**
+  - [ ] 6.2 Write integration tests for GenerateCommand
+    - Test generate with specific file targets
+    - Test generate with type filtering (api, readme, architecture)
+    - Test preview mode shows output without writing
+    - Test generation summary output
+    - _Validates: Requirements 3.1, 3.2, 3.3, 3.4_
 
 - [ ] 7. Implement SyncCommand (without Issue Detection)
   - [ ] 7.1 Create SyncEngine service
@@ -98,15 +96,15 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
     - Create `src/commands/sync.ts` implementing `Command` interface
     - Integrate SyncEngine service
     - Handle `--force`, `--dry-run` options
-    - Implement conflict resolution prompts
     - Display diff summary
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ] 7.3 Write property tests for sync behavior
-    - **Property 10: Sync convergence**
-    - **Property 11: Force sync overwrites completely**
-    - **Property 12: Diff summary accuracy**
-    - **Validates: Requirements 4.1, 4.3, 4.4**
+  - [ ] 7.3 Write integration tests for SyncCommand
+    - Test sync detects and applies documentation changes
+    - Test dry-run shows changes without applying
+    - Test force flag overwrites existing content
+    - Test diff summary output accuracy
+    - _Validates: Requirements 4.1, 4.3, 4.4_
 
 - [ ] 8. Implement ConfigCommand
   - [ ] 8.1 Extend ConfigManager for CLI operations
@@ -120,12 +118,12 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
     - Implement `show`, `set`, `validate`, `reset` subcommands
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ] 8.3 Write property tests for config operations
-    - **Property 13: Config show completeness**
-    - **Property 14: Config set/get round-trip**
-    - **Property 15: Config validation consistency**
-    - **Property 16: Config reset restores defaults**
-    - **Validates: Requirements 5.1, 5.2, 5.3, 5.5**
+  - [ ] 8.3 Write integration tests for ConfigCommand
+    - Test config show displays all settings
+    - Test config set updates values correctly
+    - Test config validate reports issues
+    - Test config reset restores defaults
+    - _Validates: Requirements 5.1, 5.2, 5.3, 5.5_
 
 - [ ] 9. Implement StatusCommand
   - [ ] 9.1 Implement StatusCommand
@@ -135,10 +133,12 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
     - Display warnings and suggestions
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ] 9.2 Write property tests for status output
-    - **Property 17: Status output completeness**
-    - **Property 18: Status warnings inclusion**
-    - **Validates: Requirements 6.1, 6.2, 6.4**
+  - [ ] 9.2 Write integration tests for StatusCommand
+    - Test status shows initialization state
+    - Test status shows config validity
+    - Test verbose mode shows additional details
+    - Test warnings are displayed for issues
+    - _Validates: Requirements 6.1, 6.2, 6.4_
 
 - [ ] 10. Checkpoint - All commands implemented
   - Ensure all tests pass, ask the user if questions arise.
@@ -161,11 +161,13 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
     - Handle MCP unavailability gracefully (log warning, continue)
     - _Requirements: 7.1, 7.3, 7.5_
 
-  - [ ] 11.4 Write property tests for issue detection
-    - **Property 19: Issue agent triggers on sync changes**
-    - **Property 20: Issue payload structure**
-    - **Property 21: Issue agent respects configuration**
-    - **Validates: Requirements 7.1, 7.2, 7.4, 7.6**
+  - [ ] 11.4 Write integration tests for Issue Detection
+    - Test issue detection triggers after sync with changes
+    - Test issue payload follows required structure
+    - Test rate limiting respects maxIssuesPerSync config
+    - Test priority filtering respects issueMinPriority config
+    - Test graceful handling when MCP is unavailable
+    - _Validates: Requirements 7.1, 7.2, 7.4, 7.5, 7.6_
 
 - [ ] 12. Final integration and documentation
   - [ ] 12.1 Update CLI help text and documentation
@@ -183,8 +185,8 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
 
 ## Notes
 
-- All tasks including property tests are required for comprehensive coverage
+- Tasks 1-5 include property tests for core infrastructure validation
+- Tasks 6+ use integration tests for end-to-end command validation
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation
-- Property tests validate universal correctness properties
-- Unit tests validate specific examples and edge cases
+- Integration tests validate real command behavior with actual file system operations

@@ -1,0 +1,497 @@
+[
+  {
+    "id": "metrics-1768603018568-fjyr4hec8",
+    "timestamp": "2026-01-16T22:36:58.568Z",
+    "sessionId": "session-1768603018568-7zahwkvfu",
+    "analysisRuns": 1,
+    "filesProcessed": 1,
+    "tokensConsumed": 32466,
+    "estimatedCost": 0.5844,
+    "executionTimeMs": 120193,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      },
+      {
+        "type": "subagent",
+        "count": 3,
+        "durationMs": 63886,
+        "tokens": 32466,
+        "cost": 0.5844
+      },
+      {
+        "type": "template",
+        "count": 1,
+        "durationMs": 56295,
+        "cost": 0
+      },
+      {
+        "type": "file-write",
+        "count": 1,
+        "durationMs": 11,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603082722-nvjnq7g05",
+    "timestamp": "2026-01-16T22:38:02.722Z",
+    "sessionId": "session-1768603082722-rsdo24i5p",
+    "analysisRuns": 1,
+    "filesProcessed": 1,
+    "tokensConsumed": 33540,
+    "estimatedCost": 0.60374,
+    "executionTimeMs": 99596,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      },
+      {
+        "type": "subagent",
+        "count": 3,
+        "durationMs": 53932,
+        "tokens": 33540,
+        "cost": 0.60374
+      },
+      {
+        "type": "template",
+        "count": 1,
+        "durationMs": 45651,
+        "cost": 0
+      },
+      {
+        "type": "file-write",
+        "count": 1,
+        "durationMs": 12,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603226411-ycqbcp1g7",
+    "timestamp": "2026-01-16T22:40:26.411Z",
+    "sessionId": "session-1768603226411-gu58d1gz0",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 1,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603226472-kxwchdzxt",
+    "timestamp": "2026-01-16T22:40:26.472Z",
+    "sessionId": "session-1768603226472-zzxg9opcf",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 4,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 4,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227027-s66tcpaco",
+    "timestamp": "2026-01-16T22:40:27.027Z",
+    "sessionId": "session-1768603227027-fcdoigqpo",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227440-330qcp38j",
+    "timestamp": "2026-01-16T22:40:27.440Z",
+    "sessionId": "session-1768603227440-i0vbzup06",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227710-0u1g7qtkq",
+    "timestamp": "2026-01-16T22:40:27.710Z",
+    "sessionId": "session-1768603227710-4mwgyhuat",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227719-6soat1qg7",
+    "timestamp": "2026-01-16T22:40:27.719Z",
+    "sessionId": "session-1768603227719-2hiyyldsf",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227743-rnlyg346l",
+    "timestamp": "2026-01-16T22:40:27.743Z",
+    "sessionId": "session-1768603227743-hpfswpsfn",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227752-vgqg1eiob",
+    "timestamp": "2026-01-16T22:40:27.752Z",
+    "sessionId": "session-1768603227752-z4hj2ik1s",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 1,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227871-1erts741v",
+    "timestamp": "2026-01-16T22:40:27.871Z",
+    "sessionId": "session-1768603227871-88n0g95qx",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603227908-bswqpjt1y",
+    "timestamp": "2026-01-16T22:40:27.908Z",
+    "sessionId": "session-1768603227908-x66kc30p4",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603228408-trajbec9g",
+    "timestamp": "2026-01-16T22:40:28.408Z",
+    "sessionId": "session-1768603228408-sf9z5hkaq",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 1,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603228446-d6v4pov9g",
+    "timestamp": "2026-01-16T22:40:28.446Z",
+    "sessionId": "session-1768603228446-iobma9cit",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 2,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 2,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603228910-upafshbdl",
+    "timestamp": "2026-01-16T22:40:28.910Z",
+    "sessionId": "session-1768603228910-bwujv817b",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603228916-yz92u9uji",
+    "timestamp": "2026-01-16T22:40:28.916Z",
+    "sessionId": "session-1768603228916-ho7kgdr9d",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 1,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603228951-mm6wnarvk",
+    "timestamp": "2026-01-16T22:40:28.951Z",
+    "sessionId": "session-1768603228950-1rwr4pz8z",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 1,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603228959-3okgr7v27",
+    "timestamp": "2026-01-16T22:40:28.959Z",
+    "sessionId": "session-1768603228959-jj0d787ch",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603229811-xp49a905s",
+    "timestamp": "2026-01-16T22:40:29.811Z",
+    "sessionId": "session-1768603229811-ujwl2qk3h",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603229852-k14izb7bh",
+    "timestamp": "2026-01-16T22:40:29.852Z",
+    "sessionId": "session-1768603229852-5ch5ggm8n",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603230212-gs5vespsw",
+    "timestamp": "2026-01-16T22:40:30.212Z",
+    "sessionId": "session-1768603230212-vr9poz9mv",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 2,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 2,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603230253-j5qbeyolu",
+    "timestamp": "2026-01-16T22:40:30.253Z",
+    "sessionId": "session-1768603230253-oakyhdd0k",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603230654-c7qljd1kf",
+    "timestamp": "2026-01-16T22:40:30.654Z",
+    "sessionId": "session-1768603230654-x0hwp9zcd",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 1,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603230717-dhzbbe8qq",
+    "timestamp": "2026-01-16T22:40:30.717Z",
+    "sessionId": "session-1768603230717-16t2jxjft",
+    "analysisRuns": 0,
+    "filesProcessed": 0,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 0,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 0,
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "metrics-1768603230818-bne440kqq",
+    "timestamp": "2026-01-16T22:40:30.818Z",
+    "sessionId": "session-1768603230818-vfjx7ik2l",
+    "analysisRuns": 1,
+    "filesProcessed": 1,
+    "tokensConsumed": 0,
+    "estimatedCost": 0,
+    "executionTimeMs": 51492,
+    "operationBreakdown": [
+      {
+        "type": "analysis",
+        "count": 1,
+        "durationMs": 1,
+        "cost": 0
+      },
+      {
+        "type": "subagent",
+        "count": 1,
+        "durationMs": 51491,
+        "tokens": 0,
+        "cost": 0
+      }
+    ]
+  }
+]

@@ -88,6 +88,8 @@ These hooks use Kiro's `agent-prompt` action type, meaning they instruct Kiro's 
 
 - **processData Function**: A function that processes a string input and returns a string output.
 
+- **Command Line Argument Handling**: Enhanced command line argument parsing in the main entry point of the Auto-Doc-Sync System, allowing for more flexible configuration and execution.
+
 ## API Reference
 
 ### SubagentClient
@@ -137,6 +139,9 @@ These hooks use Kiro's `agent-prompt` action type, meaning they instruct Kiro's 
 
 - **processData(data: string): string**
   - Processes the input string data and returns a modified string.
+
+- **main()**
+  - CLI entry point for the Auto-Doc-Sync System. Parses command line arguments and initializes the system.
 
 ## Configuration
 
@@ -249,3 +254,8 @@ MIT
 - **manual-test**: Added processData function (string) → string
 - **comprehensive-api**: Updated UserManagementService class with 1 methods
 - **feature**: Updated FeatureService class with 1 methods
+- **Command Line Argument Handling**: Enhanced command line argument parsing in the main entry point of the Auto-Doc-Sync System, allowing for more flexible configuration and execution.
+
+**API:**
+
+- **main**: CLI entry point for the Auto-Doc-Sync System. Parses command line arguments and initializes the system.

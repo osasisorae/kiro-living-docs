@@ -51,8 +51,38 @@ export class FileWatcher extends EventEmitter {
       return;
     }
 
-    this.watcher = chokidar.watch(this.config.patterns, {
-      ignored: this.config.excludePatterns,
+    // Convert glob patterns to watch paths
+    // chokidar works better with directory paths than glob patterns when using cwd
+    const watchPaths = this.config.patterns.map(pattern => {
+      // Extract the base directory from glob patterns
+      // e.g., "**/*.ts" -> ".", "src/**/*.ts" -> "src"
+      const parts = pattern.split('/');
+      const baseDir = parts[0] === '**' ? '.' : parts[0];
+      return baseDir;
+    });
+    
+    // Deduplicate watch paths
+    const uniquePaths = [...new Set(watchPaths)];
+
+    this.watcher = chokidar.watch(uniquePaths, {
+      ignored: (filePath: string) => {
+        // Check exclude patterns
+        for (const pattern of this.config.excludePatterns) {
+          if (this.matchesPattern(filePath, pattern)) {
+            return true;
+          }
+        }
+        // Check if file matches include patterns (for file extension filtering)
+        const hasMatchingExtension = this.config.patterns.some(pattern => {
+          const ext = pattern.match(/\*(\.[a-z]+)$/i)?.[1];
+          return ext ? filePath.endsWith(ext) : true;
+        });
+        // Ignore if it's a file that doesn't match our extensions
+        if (filePath.includes('.') && !hasMatchingExtension) {
+          return true;
+        }
+        return false;
+      },
       persistent: true,
       ignoreInitial: true,
       cwd: this.config.cwd,
@@ -60,8 +90,8 @@ export class FileWatcher extends EventEmitter {
         stabilityThreshold: 50,
         pollInterval: 20,
       },
-      usePolling: true, // More reliable for tests
-      interval: 50,
+      usePolling: true, // More reliable for cross-platform support
+      interval: 100,
     });
 
     this.watcher
@@ -211,6 +241,23 @@ export class FileWatcher extends EventEmitter {
     }
     
     return paths;
+  }
+
+  /**
+   * Check if a path matches a glob-like pattern
+   */
+  private matchesPattern(filePath: string, pattern: string): boolean {
+    // Simple pattern matching for common cases
+    // Convert glob pattern to regex
+    const regexPattern = pattern
+      .replace(/\*\*/g, '{{GLOBSTAR}}')
+      .replace(/\*/g, '[^/]*')
+      .replace(/{{GLOBSTAR}}/g, '.*')
+      .replace(/\./g, '\\.')
+      .replace(/\?/g, '.');
+    
+    const regex = new RegExp(regexPattern);
+    return regex.test(filePath);
   }
 }
 
