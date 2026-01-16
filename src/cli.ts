@@ -1,237 +1,241 @@
 #!/usr/bin/env node
 
 /**
- * Command-line interface for manual triggering of the Auto-Doc-Sync System
+ * Command-line interface for the Auto-Doc-Sync System
+ * Supports both new kiro-docs commands and legacy auto-doc-sync usage
  */
 
 import { AutoDocSyncSystem } from './orchestrator';
 import { runUsageCLI } from './usage/cli';
 import { installGitHooks, uninstallGitHooks, checkGitHooks } from './hooks/install-git-hooks';
+import { CommandRouter, parseArgs, createRouter } from './commands';
+import { Command, CommandResult, ParsedArgs, ExitCodes } from './commands/types';
+import { InitCommand } from './commands/init';
 
-interface CLIOptions {
-  trigger: 'git-hook' | 'manual';
-  config?: string;
-  workspace?: string;
-  files?: string[];
-  reason?: string;
-  help?: boolean;
-  version?: boolean;
-}
+/**
+ * Legacy command for backward compatibility with auto-doc-sync
+ */
+class LegacyCommand implements Command {
+  name = 'legacy';
+  description = 'Run the legacy auto-doc-sync system';
+  options = [
+    { name: 'trigger', alias: 't', description: 'Trigger type', type: 'string' as const, default: 'manual' },
+    { name: 'config', alias: 'c', description: 'Path to configuration file', type: 'string' as const },
+    { name: 'workspace', alias: 'w', description: 'Workspace root directory', type: 'string' as const },
+    { name: 'reason', alias: 'r', description: 'Reason for manual trigger', type: 'string' as const },
+    { name: 'files', description: 'Files to analyze', type: 'string' as const },
+  ];
 
-function parseArguments(): CLIOptions {
-  const args = process.argv.slice(2);
-  const options: CLIOptions = {
-    trigger: 'manual'
-  };
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
+  async execute(args: ParsedArgs): Promise<CommandResult> {
+    const trigger = (args.options.trigger || 'manual') as 'git-hook' | 'manual';
+    const config = args.options.config as string | undefined;
+    const workspace = args.options.workspace as string | undefined;
+    const reason = args.options.reason as string | undefined;
     
-    if (arg === '--help' || arg === '-h') {
-      options.help = true;
-    } else if (arg === '--version' || arg === '-v') {
-      options.version = true;
-    } else if (arg.startsWith('--trigger=')) {
-      const value = arg.split('=')[1] as 'git-hook' | 'manual';
-      if (value === 'git-hook' || value === 'manual') {
-        options.trigger = value;
-      } else {
-        throw new Error(`Invalid trigger type: ${value}. Must be 'git-hook' or 'manual'`);
-      }
-    } else if (arg.startsWith('--config=')) {
-      options.config = arg.split('=')[1];
-    } else if (arg.startsWith('--workspace=')) {
-      options.workspace = arg.split('=')[1];
-    } else if (arg.startsWith('--reason=')) {
-      options.reason = arg.split('=')[1];
-    } else if (arg.startsWith('--file=')) {
-      if (!options.files) options.files = [];
-      options.files.push(arg.split('=')[1]);
-    } else if (arg.startsWith('--files=')) {
-      options.files = arg.split('=')[1].split(',');
-    } else if (!arg.startsWith('-')) {
-      // Treat non-flag arguments as files
-      if (!options.files) options.files = [];
-      options.files.push(arg);
-    } else {
-      throw new Error(`Unknown option: ${arg}`);
+    // Collect files from options and positional args
+    let files: string[] | undefined;
+    if (args.options.files) {
+      files = String(args.options.files).split(',');
     }
-  }
-
-  return options;
-}
-
-function showHelp(): void {
-  console.log(`
-Auto-Doc-Sync System - Autonomous Documentation Synchronization
-
-USAGE:
-  auto-doc-sync [OPTIONS] [FILES...]
-  auto-doc-sync usage <command> [args]
-  auto-doc-sync hooks <command> [args]
-
-OPTIONS:
-  --trigger=TYPE        Trigger type: 'manual' (default) or 'git-hook'
-  --config=PATH         Path to configuration file
-  --workspace=PATH      Workspace root directory (default: current directory)
-  --reason=TEXT         Reason for manual trigger (for logging)
-  --file=PATH           Specific file to analyze (can be used multiple times)
-  --files=PATH1,PATH2   Comma-separated list of files to analyze
-  -h, --help           Show this help message
-  -v, --version        Show version information
-
-USAGE COMMANDS:
-  usage summary [days]     Show usage summary (default: 7 days)
-  usage current           Show current session metrics
-  usage projections       Show cost projections
-  usage recommendations   Show usage optimization recommendations
-
-HOOK COMMANDS:
-  hooks install [--force]  Install git hooks (.git/hooks/) for automatic doc sync on commits
-  hooks uninstall         Uninstall git hooks
-  hooks check             Check git hook installation status
-
-NOTE: These are git hooks, not Kiro hooks. Kiro hooks are configured via
-      .kiro/hooks/*.json and managed through the Kiro IDE.
-
-EXAMPLES:
-  # Manual trigger for all changes
-  auto-doc-sync
-
-  # Manual trigger with specific files
-  auto-doc-sync src/api.ts src/types.ts
-
-  # Manual trigger with reason
-  auto-doc-sync --reason="Updated API documentation"
-
-  # Git hook trigger (typically called by git hooks)
-  auto-doc-sync --trigger=git-hook
-
-  # Use custom configuration
-  auto-doc-sync --config=./my-config.json
-
-  # Show usage summary for last 30 days
-  auto-doc-sync usage summary 30
-
-  # Show cost projections
-  auto-doc-sync usage projections
-
-  # Install git hooks
-  auto-doc-sync hooks install
-
-  # Check hook status
-  auto-doc-sync hooks check
-
-CONFIGURATION:
-  The system looks for configuration in the following order:
-  1. File specified by --config option
-  2. .kiro/auto-doc-sync.json
-  3. Default configuration
-
-  Configuration file format:
-  {
-    "analysis": {
-      "includePatterns": ["**/*.ts", "**/*.js"],
-      "excludePatterns": ["**/node_modules/**"],
-      "maxFileSize": 1048576,
-      "analysisDepth": "deep"
-    },
-    "output": {
-      "preserveFormatting": true,
-      "backupFiles": true,
-      "validateOutput": true
-    },
-    "subagent": {
-      "enabled": true,
-      "configPath": ".kiro/subagents/doc-analysis-agent.json"
-    },
-    "hooks": {
-      "enabled": true,
-      "configPath": ".kiro/hooks"
-    }
-  }
-
-DIRECTORIES:
-  The system creates and uses the following directories:
-  - .kiro/specs/           - Technical specifications
-  - .kiro/development-log/ - Development log entries
-  - .kiro/hooks/          - Hook configurations
-  - .kiro/subagents/      - Subagent configurations
-
-For more information, visit: https://github.com/your-org/auto-doc-sync
-`);
-}
-
-function showVersion(): void {
-  const packageJson = require('../package.json');
-  console.log(`Auto-Doc-Sync System v${packageJson.version}`);
-}
-
-async function main(): Promise<void> {
-  try {
-    const options = parseArguments();
-
-    if (options.help) {
-      showHelp();
-      return;
-    }
-
-    if (options.version) {
-      showVersion();
-      return;
-    }
-
-    // Check if this is a usage command
-    const args = process.argv.slice(2);
-    if (args[0] === 'usage') {
-      const command = args[1] || 'summary';
-      const commandArgs = args.slice(2);
-      await runUsageCLI(command, commandArgs);
-      return;
-    }
-
-    // Check if this is a hooks command
-    if (args[0] === 'hooks') {
-      const command = args[1];
-      const force = args.includes('--force');
-      
-      switch (command) {
-        case 'install':
-          await installGitHooks({ force });
-          break;
-        case 'uninstall':
-          await uninstallGitHooks();
-          break;
-        case 'check':
-          await checkGitHooks();
-          break;
-        default:
-          console.error(`❌ Unknown hooks command: ${command}`);
-          console.error('Available commands: install, uninstall, check');
-          process.exit(1);
-      }
-      return;
+    if (args.positional.length > 0) {
+      files = [...(files || []), ...args.positional];
     }
 
     console.log('🚀 Starting Auto-Doc-Sync System...');
     
-    const system = new AutoDocSyncSystem(options.config, options.workspace);
+    const system = new AutoDocSyncSystem(config, workspace);
     
     await system.run({
-      triggerType: options.trigger,
-      configPath: options.config,
-      targetFiles: options.files,
-      reason: options.reason
+      triggerType: trigger,
+      configPath: config,
+      targetFiles: files,
+      reason: reason
     });
 
     console.log('✅ Auto-Doc-Sync System completed successfully');
+    
+    return { success: true, exitCode: ExitCodes.SUCCESS };
+  }
+}
+
+/**
+ * Usage command wrapper
+ */
+class UsageCommand implements Command {
+  name = 'usage';
+  description = 'Show usage statistics and cost projections';
+  options = [];
+
+  async execute(args: ParsedArgs): Promise<CommandResult> {
+    const subcommand = args.subcommand || 'summary';
+    const commandArgs = args.positional;
+    await runUsageCLI(subcommand, commandArgs);
+    return { success: true, exitCode: ExitCodes.SUCCESS };
+  }
+}
+
+/**
+ * Hooks command wrapper (git hooks, not Kiro hooks)
+ */
+class HooksCommand implements Command {
+  name = 'hooks';
+  description = 'Manage git hooks for automatic doc sync';
+  options = [
+    { name: 'force', alias: 'f', description: 'Force installation', type: 'boolean' as const },
+  ];
+
+  async execute(args: ParsedArgs): Promise<CommandResult> {
+    const subcommand = args.subcommand;
+    const force = Boolean(args.options.force);
+
+    switch (subcommand) {
+      case 'install':
+        await installGitHooks({ force });
+        break;
+      case 'uninstall':
+        await uninstallGitHooks();
+        break;
+      case 'check':
+        await checkGitHooks();
+        break;
+      default:
+        console.error(`❌ Unknown hooks command: ${subcommand}`);
+        console.error('Available commands: install, uninstall, check');
+        return { success: false, exitCode: ExitCodes.GENERAL_ERROR };
+    }
+    
+    return { success: true, exitCode: ExitCodes.SUCCESS };
+  }
+}
+
+/**
+ * Placeholder commands for new kiro-docs functionality
+ * These will be implemented in subsequent tasks
+ */
+
+class WatchCommand implements Command {
+  name = 'watch';
+  description = 'Watch for file changes and auto-update documentation';
+  options = [
+    { name: 'debounce', description: 'Debounce time in milliseconds', type: 'number' as const, default: 500 },
+    { name: 'verbose', alias: 'v', description: 'Show detailed output', type: 'boolean' as const },
+  ];
+
+  async execute(_args: ParsedArgs): Promise<CommandResult> {
+    console.log('⚠️  Watch command not yet implemented');
+    return { success: false, message: 'Not implemented', exitCode: ExitCodes.GENERAL_ERROR };
+  }
+}
+
+class GenerateCommand implements Command {
+  name = 'generate';
+  description = 'Generate documentation from source files';
+  options = [
+    { name: 'files', description: 'Specific files to analyze', type: 'string' as const },
+    { name: 'type', description: 'Documentation type (api, readme, changelog, all)', type: 'string' as const, default: 'all' },
+    { name: 'preview', description: 'Preview changes without writing files', type: 'boolean' as const },
+  ];
+
+  async execute(_args: ParsedArgs): Promise<CommandResult> {
+    console.log('⚠️  Generate command not yet implemented');
+    return { success: false, message: 'Not implemented', exitCode: ExitCodes.GENERAL_ERROR };
+  }
+}
+
+class SyncCommand implements Command {
+  name = 'sync';
+  description = 'Sync documentation with current codebase';
+  options = [
+    { name: 'force', alias: 'f', description: 'Overwrite without prompting', type: 'boolean' as const },
+    { name: 'dry-run', description: 'Show changes without applying', type: 'boolean' as const },
+  ];
+
+  async execute(_args: ParsedArgs): Promise<CommandResult> {
+    console.log('⚠️  Sync command not yet implemented');
+    return { success: false, message: 'Not implemented', exitCode: ExitCodes.GENERAL_ERROR };
+  }
+}
+
+class ConfigCommand implements Command {
+  name = 'config';
+  description = 'Manage auto-doc configuration';
+  options = [];
+
+  async execute(args: ParsedArgs): Promise<CommandResult> {
+    const subcommand = args.subcommand;
+    
+    switch (subcommand) {
+      case 'show':
+      case 'set':
+      case 'validate':
+      case 'reset':
+        console.log(`⚠️  Config ${subcommand} not yet implemented`);
+        return { success: false, message: 'Not implemented', exitCode: ExitCodes.GENERAL_ERROR };
+      default:
+        console.error('Usage: kiro-docs config <show|set|validate|reset>');
+        return { success: false, exitCode: ExitCodes.GENERAL_ERROR };
+    }
+  }
+}
+
+class StatusCommand implements Command {
+  name = 'status';
+  description = 'Show auto-doc status and diagnostics';
+  options = [
+    { name: 'verbose', alias: 'v', description: 'Show detailed status', type: 'boolean' as const },
+  ];
+
+  async execute(_args: ParsedArgs): Promise<CommandResult> {
+    console.log('⚠️  Status command not yet implemented');
+    return { success: false, message: 'Not implemented', exitCode: ExitCodes.GENERAL_ERROR };
+  }
+}
+
+/**
+ * Set up the command router with all commands
+ */
+function setupRouter(): CommandRouter {
+  const router = createRouter();
+  
+  // Register new kiro-docs commands
+  router.register(new InitCommand());
+  router.register(new WatchCommand());
+  router.register(new GenerateCommand());
+  router.register(new SyncCommand());
+  router.register(new ConfigCommand());
+  router.register(new StatusCommand());
+  
+  // Register legacy/utility commands
+  router.register(new UsageCommand());
+  router.register(new HooksCommand());
+  
+  // Set legacy command as default for backward compatibility
+  router.setDefault(new LegacyCommand());
+  
+  return router;
+}
+
+/**
+ * Main entry point
+ */
+async function main(): Promise<void> {
+  try {
+    const router = setupRouter();
+    const args = parseArgs(process.argv);
+    
+    const result = await router.route(args);
+    
+    if (!result.success && result.message) {
+      console.error(result.message);
+    }
+    
+    process.exit(result.exitCode);
   } catch (error) {
-    console.error('❌ Auto-Doc-Sync System failed:');
+    console.error('❌ CLI failed:');
     
     if (error instanceof Error) {
       console.error(`   ${error.message}`);
       
-      // Show stack trace in debug mode
       if (process.env.DEBUG || process.env.NODE_ENV === 'development') {
         console.error('\nStack trace:');
         console.error(error.stack);
@@ -240,7 +244,7 @@ async function main(): Promise<void> {
       console.error(`   ${String(error)}`);
     }
     
-    console.error('\nFor help, run: auto-doc-sync --help');
+    console.error('\nFor help, run: kiro-docs --help');
     process.exit(1);
   }
 }
@@ -275,4 +279,4 @@ if (require.main === module) {
   main();
 }
 
-export { main as runCLI };
+export { main as runCLI, setupRouter };

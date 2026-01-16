@@ -88,3 +88,16 @@ This document defines the requirements for enhancing the Auto-Doc-Sync CLI to be
 2. WHEN a user runs `kiro-docs status --verbose` THEN THE CLI SHALL include detailed information about watched files and pending changes
 3. IF auto-doc is not initialized THEN THE CLI SHALL suggest running `kiro-docs init`
 4. WHEN displaying status THEN THE CLI SHALL show any warnings or issues that need attention
+
+### Requirement 7: GitHub Issue Detection and Creation
+
+**User Story:** As a developer, I want an AI agent to automatically analyze code changes and create GitHub issues for potential bugs, missing documentation, or necessary refactoring, so that I can maintain a high-quality codebase and track all necessary work.
+
+#### Acceptance Criteria
+
+1. WHEN `kiro-docs sync` completes with changes THEN THE CLI SHALL trigger the **Issue Detection Agent**.
+2. THE Issue Detection Agent SHALL analyze the code changes and the project context to identify potential issues.
+3. THE Agent SHALL use the GitHub MCP server's `issues_create` tool to create new issues on the repository.
+4. EACH created issue SHALL include a descriptive title, a detailed body explaining the problem and its location, and appropriate labels (e.g., `bug`, `refactor`, `documentation`).
+5. IF the GitHub MCP server is not configured or accessible THEN THE CLI SHALL log a warning and continue without creating issues.
+6. THE user SHALL be able to configure the Issue Detection Agent's behavior (e.g., issue labels, minimum priority) via the `.kiro/auto-doc-sync.json` configuration file.

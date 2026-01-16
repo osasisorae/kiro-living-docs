@@ -6,41 +6,41 @@ This implementation plan transforms the existing `src/cli.ts` into a full-featur
 
 ## Tasks
 
-- [ ] 1. Set up command infrastructure and argument parsing
-  - [ ] 1.1 Create command router and base interfaces
+- [x] 1. Set up command infrastructure and argument parsing
+  - [x] 1.1 Create command router and base interfaces
     - Create `src/commands/types.ts` with `Command`, `CommandOption`, `CommandResult`, `ParsedArgs` interfaces
     - Create `src/commands/router.ts` with command registration and dispatch logic
     - _Requirements: All commands need this foundation_
 
-  - [ ] 1.2 Refactor CLI entry point to use command router
+  - [x] 1.2 Refactor CLI entry point to use command router
     - Update `src/cli.ts` to use new argument parser and command router
     - Support `kiro-docs <command> [options]` syntax
     - Maintain backward compatibility with existing `auto-doc-sync` usage
     - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1, 6.1_
 
-  - [ ] 1.3 Write unit tests for argument parsing
+  - [x] 1.3 Write unit tests for argument parsing
     - Test command routing for all supported commands
     - Test option parsing with various flag combinations
     - _Requirements: 1.1-1.6, 2.1-2.6, 3.1-3.6_
 
-- [ ] 2. Implement InitCommand
-  - [ ] 2.1 Create template definitions
+- [x] 2. Implement InitCommand
+  - [x] 2.1 Create template definitions
     - Create `src/templates/definitions.ts` with minimal, standard, comprehensive templates
     - Define file contents and directory structures for each template type
     - _Requirements: 1.2_
 
-  - [ ] 2.2 Implement InitCommand core logic
+  - [x] 2.2 Implement InitCommand core logic
     - Create `src/commands/init.ts` implementing `Command` interface
     - Implement directory creation, config file generation, template scaffolding
     - Handle `--template`, `--dry-run`, `--force` options
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-  - [ ] 2.3 Write property test for init scaffolding
+  - [x] 2.3 Write property test for init scaffolding
     - **Property 1: Init creates correct directory structure**
     - **Property 2: Template scaffolding matches definition**
     - **Validates: Requirements 1.1, 1.2**
 
-  - [ ] 2.4 Write property test for dry-run behavior
+  - [x] 2.4 Write property test for dry-run behavior
     - **Property 4: Dry-run/preview idempotence**
     - **Validates: Requirements 1.6**
 

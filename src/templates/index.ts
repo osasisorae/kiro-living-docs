@@ -1,8 +1,5 @@
 /**
- * Template Engine - Documentation template management
+ * Template exports
  */
 
-export * from './types';
-export * from './engine';
-export * from './generators';
-export * from './readme-updater';
+export * from './definitions';

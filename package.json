@@ -4,7 +4,8 @@
   "description": "Autonomous Documentation Synchronization System for Kiro projects",
   "main": "dist/index.js",
   "bin": {
-    "auto-doc-sync": "dist/cli.js"
+    "auto-doc-sync": "dist/cli.js",
+    "kiro-docs": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
