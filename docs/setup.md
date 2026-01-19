@@ -1,1 +1,1 @@
-Include instructions on setting up and using the new CLI options and configuration management features.
+Include instructions for using the new FileWatcher service and WatchCommand.

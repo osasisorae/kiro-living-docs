@@ -1,140 +1,165 @@
 # API Documentation
 
-Generated: 2026-01-13T10:22:23.928Z
+Generated: 2026-01-16T22:58:03.185Z
 
 ## API Endpoints
 
-### resolveWorkspacePath
+### main
 
-Resolve a path relative to the workspace root.
-
-**Method:** `function`
-
-**Parameters:**
-- `relativePath` (string) - The relative path to resolve.
-
-**Returns:** `string`
-
-### initialize
-
-Initialize the system and load configurations.
+CLI entry point for the Auto-Doc-Sync System. Parses command line arguments and initializes the system.
 
 **Method:** `function`
 
 **Returns:** `Promise<void>`
 
-### run
+### loadConfig
 
-Main execution method that coordinates all system components.
-
-**Method:** `function`
-
-**Parameters:**
-- `options` (RunOptions) - Options for running the system.
-
-**Returns:** `Promise<void>`
-
-### detectChanges
-
-Detect code changes based on trigger type.
+Load configuration from file or use defaults. Attempts to find configuration file in standard locations if no path is provided.
 
 **Method:** `function`
 
 **Parameters:**
-- `options` (RunOptions) - Options for detecting changes.
+- `configPath` (string) - Optional path to the configuration file.
 
-**Returns:** `Promise<string[]>`
+**Returns:** `SystemConfig`
 
-### performAnalysis
+### loadConfigFromPath
 
-Perform code analysis with optional subagent enhancement.
-
-**Method:** `function`
-
-**Parameters:**
-- `changes` (string[]) - List of changes to analyze.
-
-**Returns:** `Promise<ChangeAnalysis>`
-
-### processDocumentationRequirements
-
-Process documentation requirements using templates.
+Load configuration from a specific path and validate it. Falls back to default configuration if validation fails.
 
 **Method:** `function`
 
 **Parameters:**
-- `requirements` (DocumentationRequirement[]) - List of documentation requirements.
-- `analysis` (ChangeAnalysis) - Analysis results to use for processing.
+- `configPath` (string) - Path to the configuration file.
+- `defaultConfig` (SystemConfig) - Default configuration to fall back on.
 
-**Returns:** `Promise<DocumentationRequirement[]>`
+**Returns:** `SystemConfig`
 
-### AutoDocSyncSystem.resolveWorkspacePath
+### getDefaultConfig
 
-AutoDocSyncSystem method: resolveWorkspacePath
+Get default system configuration.
 
-**Method:** `method`
+**Method:** `function`
 
-**Returns:** `any`
+**Returns:** `SystemConfig`
 
-### AutoDocSyncSystem.initialize
+### validateConfig
 
-AutoDocSyncSystem method: initialize
+Validate the configuration object and return validation results including errors and warnings.
 
-**Method:** `method`
+**Method:** `function`
 
-**Returns:** `any`
+**Parameters:**
+- `config` (any) - Configuration object to validate.
 
-### AutoDocSyncSystem.run
+**Returns:** `ConfigValidationResult`
 
-AutoDocSyncSystem method: run
+### mergeConfigs
 
-**Method:** `method`
+Merge user configuration with defaults.
 
-**Returns:** `any`
+**Method:** `function`
 
-### AutoDocSyncSystem.detectChanges
+**Parameters:**
+- `defaultConfig` (SystemConfig) - Default configuration.
+- `userConfig` (any) - User-provided configuration.
 
-AutoDocSyncSystem method: detectChanges
+**Returns:** `SystemConfig`
 
-**Method:** `method`
+### saveConfig
 
-**Returns:** `any`
+Save configuration to a file. Validates configuration before saving.
 
-### AutoDocSyncSystem.performAnalysis
+**Method:** `function`
 
-AutoDocSyncSystem method: performAnalysis
+**Parameters:**
+- `config` (SystemConfig) - Configuration to save.
+- `configPath` (string) - Path where the configuration should be saved.
 
-**Method:** `method`
+**Returns:** `void`
 
-**Returns:** `any`
+### createExampleConfig
 
-### AutoDocSyncSystem.processDocumentationRequirements
+Create an example configuration file with default settings and comments.
 
-AutoDocSyncSystem method: processDocumentationRequirements
+**Method:** `function`
 
-**Method:** `method`
+**Parameters:**
+- `outputPath` (string) - Path where the example configuration should be created.
 
-**Returns:** `any`
+**Returns:** `void`
+
+### ConfigManager
+
+Manages configuration loading, validation, and saving for the Auto-Doc-Sync System.
+
+**Method:** `class`
+
+**Returns:** `class`
+
+### ConfigManager.loadConfig
+
+ConfigManager method that takes (string) and returns SystemConfig
+
+
+**Parameters:**
+- `configPath?` (string)
+
+**Returns:** `SystemConfig`
 
 ## New Features
 
-### AutoDocSyncSystem
+### AutoDocSyncSystem Initialization
 
-Main orchestration system that coordinates all components.
+Enhanced initialization process for the Auto-Doc-Sync System, allowing for command line argument parsing for configuration and workspace.
+
+
+### ConfigManager
+
+Manages configuration loading, validation, and saving for the Auto-Doc-Sync System.
 
 **Category:** enhanced
-**Affected Files:** src/orchestrator.ts
+**Affected Files:** /Users/Macintosh/LearningHub/kld/src/index.ts, /Users/Macintosh/LearningHub/kld/src/config.ts
+
+### config
+
+Updated ConfigManager class with 1 methods
+
+**Category:** enhanced
+**Affected Files:** /Users/Macintosh/LearningHub/kld/src/config.ts
 
 ## Architectural Changes
 
-### orchestrator
+### index
+
+**Type:** undefined
+**Impact:** medium
+
+Modified the main entry point to enhance command line argument handling.
+
+### ConfigManager
+
+**Type:** undefined
+**Impact:** medium
+
+Updated ConfigManager class to improve configuration loading and validation.
+
+### index
 
 **Type:** component-modified
 **Impact:** medium
 
-Component modified: orchestrator
+Component modified: index
+
+### config
+
+**Type:** component-modified
+**Impact:** medium
+
+Component modified: config
 
 ## Changed Files
 
-- `src/orchestrator.ts` (modified)
+- `/Users/Macintosh/LearningHub/kld/src/index.ts` (modified)
+- `/Users/Macintosh/LearningHub/kld/src/config.ts` (modified)
 

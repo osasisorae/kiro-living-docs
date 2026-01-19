@@ -1,1 +1,1 @@
-Document the removal of the 'test-comprehensive-ai' component, including its purpose and the impact of its removal on the system.
+Document the changes made to the CLI component and how it integrates with the new features.
